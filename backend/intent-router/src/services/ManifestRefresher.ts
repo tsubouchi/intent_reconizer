@@ -1,4 +1,3 @@
-import { Logger } from 'pino'
 import { v4 as uuidv4 } from 'uuid'
 import { manifestRepository, ManifestRecord } from './ManifestRepository'
 import { telemetryService, TelemetrySnapshot } from './TelemetryService'
@@ -51,7 +50,7 @@ interface RefreshOptions {
 export class ManifestRefresherService {
   private jobs = new Map<string, ManifestRefreshJob>()
 
-  constructor(private logger: Logger) {}
+  constructor(private logger: any) {}
 
   async listJobs(): Promise<ManifestRefreshJob[]> {
     return Array.from(this.jobs.values()).sort((a, b) => b.createdAt.localeCompare(a.createdAt))

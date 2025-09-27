@@ -1,7 +1,5 @@
-import { Redis } from 'ioredis'
 import { createHash } from 'crypto'
 import { v4 as uuidv4 } from 'uuid'
-import { Logger } from 'pino'
 import * as natural from 'natural'
 import {
   IntentRequest,
@@ -31,8 +29,8 @@ export class IntentRecognitionEngine {
   constructor(
     private serviceRegistry: ServiceRegistry,
     private mlModelService: MLModelService,
-    private redis: Redis,
-    private logger: Logger,
+    private redis: any,
+    private logger: any,
     private metrics: MetricsCollectors
   ) {
     this.tokenizer = new natural.TreebankWordTokenizer()

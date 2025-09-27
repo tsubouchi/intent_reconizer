@@ -1,9 +1,11 @@
-import { Router } from 'express'
+import express from 'express'
 import { register } from 'prom-client'
 import { MetaRouter } from '../services/MetaRouter'
 
-export function metricsRouter(metaRouter?: MetaRouter): Router {
-  const router = Router()
+type ExpressRouter = ReturnType<typeof express.Router>
+
+export function metricsRouter(metaRouter?: MetaRouter): ExpressRouter {
+  const router = express.Router()
 
   router.get('/', async (_req, res) => {
     res.set('Content-Type', register.contentType)

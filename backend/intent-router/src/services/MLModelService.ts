@@ -1,4 +1,3 @@
-import { Logger } from 'pino'
 import type { ServiceRegistry } from './ServiceRegistry'
 
 export interface ClassificationResult {
@@ -22,7 +21,7 @@ export class MLModelService {
   private readonly openAIModel = process.env.OPENAI_MODEL || 'gpt-4o-mini'
   private readonly llmProvider = process.env.LLM_PROVIDER || 'openai'
 
-  constructor(private logger: Logger, private serviceRegistry: ServiceRegistry) {}
+  constructor(private logger: any, private serviceRegistry: ServiceRegistry) {}
 
   async initialize(): Promise<void> {
     if (this.isInitialized) {

@@ -1,5 +1,4 @@
 import axios, { AxiosRequestConfig } from 'axios'
-import { Logger } from 'pino'
 import { IntentRequest } from '../types'
 import { ServiceRegistry } from './ServiceRegistry'
 import { IntentRecognitionEngine } from './IntentRecognitionEngine'
@@ -37,7 +36,7 @@ export class MetaRouter {
   constructor(
     private serviceRegistry: ServiceRegistry,
     private intentEngine: IntentRecognitionEngine,
-    private logger: Logger
+    private logger: any
   ) {}
 
   async loadRoutingRules(): Promise<void> {

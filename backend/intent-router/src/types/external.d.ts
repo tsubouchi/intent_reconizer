@@ -1,12 +1,13 @@
 declare module 'express' {
   const express: any
-  export const Router: any
-  export const json: any
-  export const urlencoded: any
   export type Application = any
   export type Request = any
   export type Response = any
   export type NextFunction = any
+  export interface Router extends Record<string, any> {}
+  export function Router(): Router
+  export function json(...args: any[]): any
+  export function urlencoded(...args: any[]): any
   export default express
 }
 
@@ -25,7 +26,8 @@ declare module 'ioredis' {
 }
 
 declare module 'pino' {
-  const pino: any
+  export type Logger = any
+  const pino: (...args: any[]) => Logger
   export default pino
 }
 

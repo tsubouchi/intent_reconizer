@@ -1,5 +1,4 @@
 import axios from 'axios'
-import { Logger } from 'pino'
 import { ServiceConfig, ServiceHealth } from '../types'
 
 interface HealthState extends ServiceHealth {
@@ -63,7 +62,7 @@ export class ServiceRegistry {
   private services: Record<string, ServiceConfig>
   private healthState: Record<string, HealthState> = {}
 
-  constructor(private logger: Logger, services: Record<string, ServiceConfig> = DEFAULT_SERVICES) {
+  constructor(private logger: any, services: Record<string, ServiceConfig> = DEFAULT_SERVICES) {
     this.services = services
   }
 

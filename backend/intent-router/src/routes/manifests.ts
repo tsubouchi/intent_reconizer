@@ -1,8 +1,10 @@
-import { Router } from 'express'
+import express from 'express'
 import { ManifestRefresherService } from '../services/ManifestRefresher'
 
-export function manifestsRouter(refresher: ManifestRefresherService): Router {
-  const router = Router()
+type ExpressRouter = ReturnType<typeof express.Router>
+
+export function manifestsRouter(refresher: ManifestRefresherService): ExpressRouter {
+  const router = express.Router()
 
   router.get('/', async (_req, res) => {
     const manifests = await refresher.listManifests()
