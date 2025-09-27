@@ -1,0 +1,76 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: machine-learning-inference-service
+  namespace: default
+  annotations:
+    run.googleapis.com/launch-stage: GA
+    run.googleapis.com/ingress: internal
+    run.googleapis.com/binary-authorization-policy: projects/PROJECT_ID/platforms/cloudRun/policies/ml-policy
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/minScale: "2"
+        autoscaling.knative.dev/maxScale: "20"
+        run.googleapis.com/execution-environment: gen2
+        run.googleapis.com/cpu-throttling: "false"
+        run.googleapis.com/startup-cpu-boost: "true"
+    spec:
+      containerConcurrency: 10
+      timeoutSeconds: 600
+      serviceAccountName: ml-inference-sa
+      containers:
+      - image: gcr.io/project-id/ml-inference:v5.2.1
+        name: ml-inference
+        ports:
+        - name: http1
+          containerPort: 8501
+        env:
+        - name: MODEL_BUCKET
+          value: "gs://ml-models-bucket"
+        - name: MODEL_NAME
+          value: "recommendation-model"
+        - name: MODEL_VERSION
+          value: "v3"
+        - name: TENSORFLOW_INTER_OP_PARALLELISM
+          value: "4"
+        - name: TENSORFLOW_INTRA_OP_PARALLELISM
+          value: "4"
+        - name: BATCH_SIZE
+          value: "32"
+        - name: CACHE_ENABLED
+          value: "true"
+        - name: CACHE_SIZE_MB
+          value: "512"
+        resources:
+          limits:
+            cpu: "8"
+            memory: "16Gi"
+            nvidia.com/gpu: "1"
+          requests:
+            cpu: "4"
+            memory: "8Gi"
+        livenessProbe:
+          httpGet:
+            path: /v1/models/recommendation-model
+            port: 8501
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /v1/models/recommendation-model/metadata
+            port: 8501
+          initialDelaySeconds: 30
+          periodSeconds: 15
+        startupProbe:
+          httpGet:
+            path: /v1/models/recommendation-model
+            port: 8501
+          initialDelaySeconds: 0
+          periodSeconds: 10
+          failureThreshold: 60
+  traffic:
+  - percent: 100
+    latestRevision: true

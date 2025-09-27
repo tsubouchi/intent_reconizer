@@ -1,0 +1,168 @@
+{
+  "version": "1.0.0",
+  "metaRoutingEngine": {
+    "enabled": true,
+    "algorithmType": "ml-enhanced",
+    "confidenceThreshold": 0.85,
+    "fallbackStrategy": "round-robin",
+    "learningMode": "online"
+  },
+  "intentCategories": {
+    "authentication": {
+      "keywords": ["login", "signin", "logout", "register", "signup", "password", "auth", "token", "session"],
+      "patterns": ["^/auth/.*", "^/login.*", "^/register.*"],
+      "mlModelId": "intent-auth-v1",
+      "priority": 100,
+      "targetService": "user-authentication-service"
+    },
+    "payment": {
+      "keywords": ["payment", "pay", "charge", "billing", "invoice", "subscription", "checkout", "cart", "stripe"],
+      "patterns": ["^/payment/.*", "^/checkout/.*", "^/billing/.*"],
+      "mlModelId": "intent-payment-v1",
+      "priority": 95,
+      "targetService": "payment-processing-service"
+    },
+    "notification": {
+      "keywords": ["email", "notify", "alert", "message", "send", "mail", "newsletter", "notification"],
+      "patterns": ["^/notify/.*", "^/email/.*", "^/messages/.*"],
+      "mlModelId": "intent-notification-v1",
+      "priority": 80,
+      "targetService": "email-notification-service"
+    },
+    "imageProcessing": {
+      "keywords": ["image", "photo", "resize", "upload", "thumbnail", "convert", "filter", "crop"],
+      "patterns": ["^/image/.*", "^/upload/.*", "^/media/.*"],
+      "mlModelId": "intent-image-v1",
+      "priority": 85,
+      "targetService": "image-processing-service"
+    },
+    "analytics": {
+      "keywords": ["analytics", "report", "dashboard", "metrics", "statistics", "data", "chart", "graph"],
+      "patterns": ["^/analytics/.*", "^/reports/.*", "^/dashboard/.*"],
+      "mlModelId": "intent-analytics-v1",
+      "priority": 75,
+      "targetService": "data-analytics-service"
+    },
+    "pdfGeneration": {
+      "keywords": ["pdf", "document", "report", "export", "print", "generate", "download"],
+      "patterns": ["^/pdf/.*", "^/export/.*", "^/documents/.*"],
+      "mlModelId": "intent-pdf-v1",
+      "priority": 70,
+      "targetService": "pdf-generator-service"
+    },
+    "realtime": {
+      "keywords": ["chat", "websocket", "realtime", "live", "stream", "message", "conversation"],
+      "patterns": ["^/ws/.*", "^/chat/.*", "^/realtime/.*"],
+      "mlModelId": "intent-realtime-v1",
+      "priority": 90,
+      "targetService": "websocket-chat-service"
+    },
+    "mlInference": {
+      "keywords": ["predict", "recommendation", "ml", "ai", "model", "inference", "suggest", "classify"],
+      "patterns": ["^/ml/.*", "^/predict/.*", "^/recommend/.*"],
+      "mlModelId": "intent-ml-v1",
+      "priority": 85,
+      "targetService": "machine-learning-inference-service"
+    },
+    "batch": {
+      "keywords": ["batch", "bulk", "scheduled", "cron", "job", "task", "queue", "process"],
+      "patterns": ["^/batch/.*", "^/jobs/.*", "^/scheduled/.*"],
+      "mlModelId": "intent-batch-v1",
+      "priority": 65,
+      "targetService": "scheduled-batch-processor-service"
+    }
+  },
+  "contextualFactors": {
+    "userProfile": {
+      "weight": 0.25,
+      "factors": ["userType", "subscriptionTier", "historicalPatterns", "preferences"]
+    },
+    "requestMetadata": {
+      "weight": 0.20,
+      "factors": ["contentType", "requestSize", "userAgent", "geoLocation"]
+    },
+    "systemState": {
+      "weight": 0.15,
+      "factors": ["serviceHealth", "loadBalance", "latency", "errorRate"]
+    },
+    "temporalContext": {
+      "weight": 0.10,
+      "factors": ["timeOfDay", "dayOfWeek", "seasonality", "timezone"]
+    },
+    "businessLogic": {
+      "weight": 0.30,
+      "factors": ["workflow", "dependencies", "priority", "sla"]
+    }
+  },
+  "routingStrategies": {
+    "loadBalancing": {
+      "algorithm": "weighted-round-robin",
+      "healthCheckInterval": 5000,
+      "failoverEnabled": true
+    },
+    "circuitBreaker": {
+      "errorThreshold": 50,
+      "timeout": 30000,
+      "resetTimeout": 60000
+    },
+    "retryPolicy": {
+      "maxAttempts": 3,
+      "backoffMultiplier": 2,
+      "initialDelay": 100
+    },
+    "caching": {
+      "enabled": true,
+      "ttl": 300,
+      "maxSize": "1GB",
+      "strategy": "LRU"
+    }
+  },
+  "mlPipeline": {
+    "preprocessing": {
+      "tokenization": "bert-base",
+      "embedding": "sentence-transformers",
+      "normalization": true
+    },
+    "models": [
+      {
+        "id": "primary-intent-classifier",
+        "type": "transformer",
+        "version": "v2.0",
+        "threshold": 0.85
+      },
+      {
+        "id": "fallback-classifier",
+        "type": "random-forest",
+        "version": "v1.5",
+        "threshold": 0.70
+      }
+    ],
+    "ensemble": {
+      "strategy": "weighted-voting",
+      "weights": [0.7, 0.3]
+    }
+  },
+  "monitoring": {
+    "metrics": [
+      "intent_recognition_accuracy",
+      "routing_latency",
+      "cache_hit_rate",
+      "model_inference_time",
+      "service_availability"
+    ],
+    "alerting": {
+      "enabled": true,
+      "channels": ["slack", "email", "pagerduty"],
+      "thresholds": {
+        "accuracy": 0.80,
+        "latency": 500,
+        "errorRate": 0.05
+      }
+    },
+    "logging": {
+      "level": "info",
+      "format": "json",
+      "retention": 30
+    }
+  }
+}

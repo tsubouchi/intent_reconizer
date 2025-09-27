@@ -1,0 +1,13 @@
+{
+  "name": "hackathon0928",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "pnpm --dir nextjs-frontend dev",
+    "dev:frontend": "pnpm --dir nextjs-frontend dev",
+    "dev:router": "pnpm --dir backend/intent-router dev",
+    "dev:manifest": "pnpm --dir backend/manifest-generator dev",
+    "lint": "pnpm --filter manifest-generator run lint && pnpm --filter intent-recognition-router run lint",
+    "type-check": "pnpm --filter manifest-generator run type-check && pnpm --filter intent-recognition-router run type-check && pnpm --dir nextjs-frontend type-check"
+  }
+}

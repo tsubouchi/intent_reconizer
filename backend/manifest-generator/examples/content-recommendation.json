@@ -1,0 +1,48 @@
+{
+  "serviceName": "Content Recommendation Service",
+  "description": "Generates personalized content recommendations using trained ML models for a streaming platform.",
+  "intent": "Deploy a scalable recommendation inference API to Cloud Run",
+  "requirements": {
+    "language": "Node.js",
+    "framework": "Express",
+    "dependencies": ["@google-cloud/storage"],
+    "performance": {
+      "expectedRPS": 1200,
+      "responseTimeMs": 120
+    },
+    "resources": {
+      "cpu": "4",
+      "memory": "8Gi"
+    },
+    "integration": {
+      "databases": ["bigquery"],
+      "apis": ["feature-store"],
+      "messaging": ["pubsub"]
+    },
+    "security": {
+      "requiresVPC": true,
+      "allowUnauthenticated": false
+    }
+  },
+  "deployment": {
+    "projectId": "project-id",
+    "imageTag": "v1.0.0",
+    "serviceAccount": "reco-service-sa",
+    "port": 8080,
+    "env": {
+      "MODEL_VERSION": "v1",
+      "CACHE_TTL": "300"
+    },
+    "secrets": [
+      {
+        "name": "ml-service-secrets",
+        "key": "api-key",
+        "envVar": "INFERENCE_API_KEY"
+      }
+    ]
+  },
+  "metadata": {
+    "owner": "ml-platform",
+    "cost-center": "cc-987"
+  }
+}

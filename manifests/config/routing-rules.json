@@ -1,0 +1,317 @@
+{
+  "version": "1.0.0",
+  "rules": [
+    {
+      "ruleId": "auth-priority",
+      "name": "Authentication Priority Route",
+      "conditions": {
+        "AND": [
+          {
+            "type": "path",
+            "operator": "matches",
+            "value": "^/(login|auth|oauth|signin)"
+          },
+          {
+            "type": "method",
+            "operator": "in",
+            "value": ["POST", "GET"]
+          }
+        ]
+      },
+      "actions": {
+        "route": "user-authentication-service",
+        "priority": 1000,
+        "timeout": 10000,
+        "retryable": true
+      }
+    },
+    {
+      "ruleId": "payment-secure",
+      "name": "Secure Payment Processing",
+      "conditions": {
+        "AND": [
+          {
+            "type": "header",
+            "key": "X-Payment-Intent",
+            "operator": "exists"
+          },
+          {
+            "type": "body",
+            "operator": "contains",
+            "value": "payment_method"
+          }
+        ]
+      },
+      "actions": {
+        "route": "payment-processing-service",
+        "priority": 950,
+        "timeout": 30000,
+        "retryable": false,
+        "requiresAuth": true
+      }
+    },
+    {
+      "ruleId": "websocket-upgrade",
+      "name": "WebSocket Connection Upgrade",
+      "conditions": {
+        "AND": [
+          {
+            "type": "header",
+            "key": "Upgrade",
+            "operator": "equals",
+            "value": "websocket"
+          },
+          {
+            "type": "header",
+            "key": "Connection",
+            "operator": "contains",
+            "value": "Upgrade"
+          }
+        ]
+      },
+      "actions": {
+        "route": "websocket-chat-service",
+        "priority": 900,
+        "sticky": true,
+        "sessionAffinity": true
+      }
+    },
+    {
+      "ruleId": "ml-inference-batch",
+      "name": "ML Batch Inference",
+      "conditions": {
+        "AND": [
+          {
+            "type": "path",
+            "operator": "matches",
+            "value": "^/ml/batch"
+          },
+          {
+            "type": "header",
+            "key": "Content-Type",
+            "operator": "equals",
+            "value": "application/json"
+          },
+          {
+            "type": "bodySize",
+            "operator": "greater",
+            "value": 1048576
+          }
+        ]
+      },
+      "actions": {
+        "route": "machine-learning-inference-service",
+        "priority": 850,
+        "timeout": 600000,
+        "async": true
+      }
+    },
+    {
+      "ruleId": "image-upload",
+      "name": "Image Upload Processing",
+      "conditions": {
+        "OR": [
+          {
+            "type": "header",
+            "key": "Content-Type",
+            "operator": "matches",
+            "value": "^image/(jpeg|png|webp|gif)"
+          },
+          {
+            "type": "path",
+            "operator": "matches",
+            "value": "^/upload/image"
+          }
+        ]
+      },
+      "actions": {
+        "route": "image-processing-service",
+        "priority": 800,
+        "timeout": 120000,
+        "maxBodySize": "52428800"
+      }
+    },
+    {
+      "ruleId": "analytics-aggregation",
+      "name": "Analytics Data Aggregation",
+      "conditions": {
+        "AND": [
+          {
+            "type": "path",
+            "operator": "starts",
+            "value": "/analytics"
+          },
+          {
+            "type": "query",
+            "key": "aggregate",
+            "operator": "equals",
+            "value": "true"
+          }
+        ]
+      },
+      "actions": {
+        "route": "data-analytics-service",
+        "priority": 750,
+        "cache": {
+          "enabled": true,
+          "ttl": 3600,
+          "key": "${path}:${query}"
+        }
+      }
+    },
+    {
+      "ruleId": "pdf-generation-async",
+      "name": "Async PDF Generation",
+      "conditions": {
+        "AND": [
+          {
+            "type": "path",
+            "operator": "equals",
+            "value": "/generate/pdf"
+          },
+          {
+            "type": "header",
+            "key": "X-Async-Request",
+            "operator": "equals",
+            "value": "true"
+          }
+        ]
+      },
+      "actions": {
+        "route": "pdf-generator-service",
+        "priority": 700,
+        "async": true,
+        "callback": "${header.X-Callback-URL}"
+      }
+    },
+    {
+      "ruleId": "scheduled-batch",
+      "name": "Scheduled Batch Processing",
+      "conditions": {
+        "AND": [
+          {
+            "type": "header",
+            "key": "X-Cloud-Scheduler",
+            "operator": "equals",
+            "value": "true"
+          },
+          {
+            "type": "path",
+            "operator": "matches",
+            "value": "^/batch/(daily|weekly|monthly)"
+          }
+        ]
+      },
+      "actions": {
+        "route": "scheduled-batch-processor-service",
+        "priority": 650,
+        "timeout": 1800000,
+        "idempotent": true
+      }
+    },
+    {
+      "ruleId": "email-notification-bulk",
+      "name": "Bulk Email Notification",
+      "conditions": {
+        "AND": [
+          {
+            "type": "path",
+            "operator": "equals",
+            "value": "/email/bulk"
+          },
+          {
+            "type": "body",
+            "operator": "jsonPath",
+            "path": "$.recipients.length",
+            "value": "> 100"
+          }
+        ]
+      },
+      "actions": {
+        "route": "email-notification-service",
+        "priority": 600,
+        "rateLimit": {
+          "requests": 10,
+          "window": 60
+        }
+      }
+    },
+    {
+      "ruleId": "api-gateway-fallback",
+      "name": "API Gateway Fallback",
+      "conditions": {
+        "AND": [
+          {
+            "type": "any",
+            "operator": "true"
+          }
+        ]
+      },
+      "actions": {
+        "route": "api-gateway-service",
+        "priority": 100,
+        "fallback": true
+      }
+    }
+  ],
+  "transformations": [
+    {
+      "id": "auth-header-injection",
+      "type": "header",
+      "operation": "add",
+      "conditions": {
+        "route": ["user-authentication-service", "payment-processing-service"]
+      },
+      "config": {
+        "name": "X-Request-ID",
+        "value": "${uuid}"
+      }
+    },
+    {
+      "id": "response-compression",
+      "type": "response",
+      "operation": "compress",
+      "conditions": {
+        "responseSize": "> 1024"
+      },
+      "config": {
+        "algorithm": "gzip",
+        "level": 6
+      }
+    }
+  ],
+  "loadBalancing": {
+    "algorithm": "least-connections",
+    "healthCheck": {
+      "interval": 5000,
+      "timeout": 3000,
+      "unhealthyThreshold": 3,
+      "healthyThreshold": 2
+    },
+    "sessionAffinity": {
+      "enabled": true,
+      "cookieName": "SERVERID",
+      "ttl": 3600
+    }
+  },
+  "rateLimiting": {
+    "enabled": true,
+    "default": {
+      "requests": 1000,
+      "window": 60,
+      "keyBy": "ip"
+    },
+    "custom": [
+      {
+        "path": "^/ml/.*",
+        "requests": 100,
+        "window": 60
+      },
+      {
+        "path": "^/payment/.*",
+        "requests": 50,
+        "window": 60
+      }
+    ]
+  }
+}

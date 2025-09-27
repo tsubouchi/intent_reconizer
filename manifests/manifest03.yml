@@ -1,0 +1,61 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: email-notification-service
+  namespace: default
+  annotations:
+    run.googleapis.com/launch-stage: GA
+    run.googleapis.com/ingress: internal
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/minScale: "0"
+        autoscaling.knative.dev/maxScale: "20"
+        run.googleapis.com/execution-environment: gen1
+    spec:
+      containerConcurrency: 100
+      timeoutSeconds: 120
+      serviceAccountName: email-service-sa
+      containers:
+      - image: gcr.io/project-id/email-notifier:v1.5.2
+        name: email-notifier
+        ports:
+        - name: http1
+          containerPort: 8000
+        env:
+        - name: SENDGRID_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: sendgrid-secret
+              key: api-key
+        - name: FROM_EMAIL
+          value: "noreply@example.com"
+        - name: TEMPLATE_BUCKET
+          value: "gs://email-templates-bucket"
+        - name: QUEUE_NAME
+          value: "email-queue"
+        - name: MAX_BATCH_SIZE
+          value: "100"
+        resources:
+          limits:
+            cpu: "1"
+            memory: "1Gi"
+          requests:
+            cpu: "0.5"
+            memory: "256Mi"
+        livenessProbe:
+          httpGet:
+            path: /health/live
+            port: 8000
+          initialDelaySeconds: 10
+          periodSeconds: 15
+        readinessProbe:
+          httpGet:
+            path: /health/ready
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 10
+  traffic:
+  - percent: 100
+    latestRevision: true

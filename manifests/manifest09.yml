@@ -1,0 +1,70 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: scheduled-batch-processor-service
+  namespace: default
+  annotations:
+    run.googleapis.com/launch-stage: GA
+    run.googleapis.com/ingress: internal
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/minScale: "0"
+        autoscaling.knative.dev/maxScale: "5"
+        run.googleapis.com/execution-environment: gen1
+    spec:
+      containerConcurrency: 1
+      timeoutSeconds: 1800
+      serviceAccountName: batch-processor-sa
+      containers:
+      - image: gcr.io/project-id/batch-processor:v1.2.5
+        name: batch-processor
+        ports:
+        - name: http1
+          containerPort: 3030
+        env:
+        - name: CLOUD_SCHEDULER_SERVICE_ACCOUNT
+          value: "scheduler-sa@project-id.iam.gserviceaccount.com"
+        - name: SPANNER_INSTANCE
+          value: "production-instance"
+        - name: SPANNER_DATABASE
+          value: "batch-database"
+        - name: BATCH_SIZE
+          value: "1000"
+        - name: PARALLEL_WORKERS
+          value: "10"
+        - name: ERROR_THRESHOLD_PERCENT
+          value: "5"
+        - name: DEAD_LETTER_TOPIC
+          value: "batch-errors-dlq"
+        - name: NOTIFICATION_WEBHOOK
+          valueFrom:
+            secretKeyRef:
+              name: webhook-secret
+              key: url
+        - name: ENVIRONMENT
+          value: "production"
+        resources:
+          limits:
+            cpu: "4"
+            memory: "4Gi"
+          requests:
+            cpu: "2"
+            memory: "2Gi"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3030
+          initialDelaySeconds: 10
+          periodSeconds: 60
+        volumeMounts:
+        - name: temp-storage
+          mountPath: /var/batch-temp
+      volumes:
+      - name: temp-storage
+        emptyDir:
+          sizeLimit: 5Gi
+  traffic:
+  - percent: 100
+    latestRevision: true

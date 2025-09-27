@@ -1,0 +1,71 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: pdf-generator-service
+  namespace: default
+  annotations:
+    run.googleapis.com/launch-stage: BETA
+    run.googleapis.com/ingress: internal-and-cloud-load-balancing
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/minScale: "0"
+        autoscaling.knative.dev/maxScale: "10"
+        run.googleapis.com/execution-environment: gen1
+        run.googleapis.com/sandbox: gvisor
+    spec:
+      containerConcurrency: 10
+      timeoutSeconds: 180
+      serviceAccountName: pdf-generator-sa
+      containers:
+      - image: gcr.io/project-id/pdf-generator:v2.3.0
+        name: pdf-generator
+        ports:
+        - name: http1
+          containerPort: 4000
+        env:
+        - name: PUPPETEER_EXECUTABLE_PATH
+          value: "/usr/bin/chromium-browser"
+        - name: TEMPLATE_ENGINE
+          value: "handlebars"
+        - name: OUTPUT_BUCKET
+          value: "generated-pdfs-bucket"
+        - name: FONTS_BUCKET
+          value: "custom-fonts-bucket"
+        - name: MAX_CONCURRENT_RENDERS
+          value: "5"
+        - name: PDF_OPTIONS_FORMAT
+          value: "A4"
+        - name: LOG_FORMAT
+          value: "json"
+        resources:
+          limits:
+            cpu: "2"
+            memory: "2Gi"
+          requests:
+            cpu: "1"
+            memory: "1Gi"
+        livenessProbe:
+          httpGet:
+            path: /healthcheck
+            port: 4000
+          initialDelaySeconds: 15
+          periodSeconds: 30
+          timeoutSeconds: 5
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+        - name: dev-shm
+          mountPath: /dev/shm
+      volumes:
+      - name: tmp
+        emptyDir:
+          sizeLimit: 2Gi
+      - name: dev-shm
+        emptyDir:
+          medium: Memory
+          sizeLimit: 1Gi
+  traffic:
+  - percent: 100
+    latestRevision: true

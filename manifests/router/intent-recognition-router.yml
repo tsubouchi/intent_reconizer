@@ -1,0 +1,107 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: intent-recognition-router
+  namespace: default
+  annotations:
+    run.googleapis.com/launch-stage: GA
+    run.googleapis.com/ingress: all
+    run.googleapis.com/operation-id: intent-router-deployment
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/minScale: "10"
+        autoscaling.knative.dev/maxScale: "500"
+        run.googleapis.com/execution-environment: gen2
+        run.googleapis.com/cpu-throttling: "false"
+        run.googleapis.com/startup-cpu-boost: "true"
+    spec:
+      containerConcurrency: 3000
+      timeoutSeconds: 30
+      serviceAccountName: intent-router-sa
+      containers:
+      - image: gcr.io/project-id/intent-recognition-router:v1.0.0
+        name: intent-router
+        ports:
+        - name: http1
+          containerPort: 8080
+        - name: grpc
+          containerPort: 9090
+        env:
+        - name: ENVIRONMENT
+          value: "production"
+        - name: NLP_MODEL_ENDPOINT
+          value: "https://ml-inference-service.run.app"
+        - name: OPENAI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: openai-secret
+              key: api-key
+        - name: INTENT_CACHE_TTL
+          value: "300"
+        - name: REDIS_CLUSTER
+          valueFrom:
+            secretKeyRef:
+              name: redis-config
+              key: cluster-endpoint
+        - name: ENABLE_DISTRIBUTED_TRACING
+          value: "true"
+        - name: JAEGER_ENDPOINT
+          value: "http://jaeger-collector:14268/api/traces"
+        - name: META_ROUTING_CONFIG
+          value: "/config/meta-routing.json"
+        - name: ROUTING_RULES_CONFIG
+          value: "/config/routing-rules.json"
+        - name: SERVICE_DISCOVERY_MODE
+          value: "dynamic"
+        - name: HEALTH_CHECK_INTERVAL
+          value: "10"
+        - name: CIRCUIT_BREAKER_THRESHOLD
+          value: "50"
+        - name: RETRY_MAX_ATTEMPTS
+          value: "3"
+        - name: TIMEOUT_MS
+          value: "5000"
+        resources:
+          limits:
+            cpu: "8"
+            memory: "8Gi"
+          requests:
+            cpu: "4"
+            memory: "4Gi"
+        livenessProbe:
+          httpGet:
+            path: /health/live
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health/ready
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        startupProbe:
+          httpGet:
+            path: /health/startup
+            port: 8080
+          failureThreshold: 30
+          periodSeconds: 10
+        volumeMounts:
+        - name: config
+          mountPath: /config
+          readOnly: true
+        - name: ml-models
+          mountPath: /models
+          readOnly: true
+      volumes:
+      - name: config
+        configMap:
+          name: router-config
+      - name: ml-models
+        emptyDir:
+          sizeLimit: 2Gi
+  traffic:
+  - percent: 100
+    latestRevision: true

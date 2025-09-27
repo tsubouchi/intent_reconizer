@@ -1,0 +1,59 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: user-authentication-service
+  namespace: default
+  annotations:
+    run.googleapis.com/launch-stage: GA
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/minScale: "1"
+        autoscaling.knative.dev/maxScale: "100"
+        run.googleapis.com/execution-environment: gen2
+    spec:
+      containerConcurrency: 1000
+      timeoutSeconds: 300
+      serviceAccountName: user-auth-sa
+      containers:
+      - image: gcr.io/project-id/user-authentication:v1.0.0
+        name: user-authentication
+        ports:
+        - name: http1
+          containerPort: 8080
+        env:
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: db-secret
+              key: url
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: jwt-secret
+              key: secret
+        - name: ENVIRONMENT
+          value: "production"
+        resources:
+          limits:
+            cpu: "2"
+            memory: "2Gi"
+          requests:
+            cpu: "1"
+            memory: "512Mi"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 5
+  traffic:
+  - percent: 100
+    latestRevision: true
