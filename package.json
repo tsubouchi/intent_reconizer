@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "scripts": {
-    "dev": "pnpm --dir apps/frontend dev",
+    "dev": "pnpm -r --parallel --stream --filter ./apps/frontend --filter ./apps/intent-router run dev",
     "dev:frontend": "pnpm --dir apps/frontend dev",
     "dev:router": "pnpm --dir apps/intent-router dev",
     "dev:manifest": "pnpm --dir apps/manifest-generator dev",
