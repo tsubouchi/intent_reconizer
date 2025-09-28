@@ -1,229 +1,80 @@
 # AGI Egg - Neural Network Router System
 
-A modern, AI-powered intent routing system that intelligently directs requests to appropriate backend services using advanced natural language processing and meta-routing capabilities.
+Next-generation, AI-assisted intent routing platform combining a modern Next.js control plane with LLM-driven meta-routing and automated Cloud Run manifest management.
 
-## 🚀 Features
+## Features
+- **Intent Intelligence** – Google Gemini-powered analysis and routing with confidence scoring and fallbacks.
+- **Operational Visibility** – Real-time health, metrics, and analytics surfaced through the frontend dashboard.
+- **Manifest Automation** – CLI and service flows that generate and optimize Cloud Run manifests from live telemetry.
+- **Monorepo Tooling** – Single pnpm workspace with shared type-checking, linting, and docs to streamline collaboration.
 
-### Core Capabilities
-- **Intelligent Intent Recognition**: Uses Google's Gemini AI to analyze and classify user intents with high accuracy
-- **Meta-Routing Engine**: Dynamic service selection based on intent confidence scores and context
-- **Real-time Health Monitoring**: Track service availability and performance metrics
-- **Cloud Run Manifest Management**: AI-assisted manifest optimization and versioning
-- **Beautiful Modern UI**: Glassmorphism design with real-time status updates
-
-### Technical Stack
-- **Frontend**: Next.js 14, React, TypeScript, Tailwind CSS
-- **Backend**: Node.js, Express, TypeScript
-- **AI Integration**: Google Gemini API for intent analysis
-- **Infrastructure**: Designed for Google Cloud Run deployment
-- **Monitoring**: Built-in metrics and health check endpoints
-
-## 📁 Project Structure
-
+## Project Layout
 ```
 hackathon0928/
-├── nextjs-frontend/          # Frontend application
-│   ├── app/                  # Next.js app directory
-│   ├── components/           # React components
-│   │   ├── intent/          # Intent analysis components
-│   │   ├── routing/         # Routing visualization
-│   │   ├── monitoring/      # Service health monitoring
-│   │   └── analytics/       # Metrics display
-│   └── lib/                 # API clients and utilities
-│
-├── backend/
-│   ├── intent-router/       # Main routing service
-│   │   ├── src/
-│   │   │   ├── routes/     # API endpoints
-│   │   │   ├── services/   # Business logic
-│   │   │   └── models/     # Data models
-│   │   └── manifests/      # Cloud Run configurations
-│   │
-│   └── manifest-generator/  # Manifest optimization service
-│       └── src/
-│           ├── services/   # AI-powered optimization
-│           └── repositories/ # Manifest storage
-│
-└── docker-compose.yml       # Local development setup
+├── apps/
+│   ├── frontend/            # Next.js 14 UI (app router, components, hooks, lib)
+│   ├── intent-router/       # Express meta-router (routes/, services/, config.ts)
+│   └── manifest-generator/  # Manifest CLI/service (src/, scripts/, examples/)
+├── api/                     # OpenAPI specification (openapi.yaml)
+├── deploy/                  # Cloud Run manifests and deployment assets
+├── docs/                    # Architecture, process, SOW, feedback references
+├── packages/                # Shared libraries (populate as needs grow)
+├── tools/                   # Automation utilities (ESLint runner, etc.)
+└── AGENTS.md                # Contributor quick-start guide for AI/code assistants
 ```
 
-## 🛠 Installation
+## Getting Started
+1. **Prerequisites:** Node.js 18+, pnpm ≥8, optional Docker & gcloud for deployments.
+2. **Install dependencies:**
+   ```bash
+   pnpm install
+   ```
+3. **Environment configuration:**
+   - `apps/frontend/.env.local`: `NEXT_PUBLIC_API_URL=http://localhost:8080`
+   - `apps/intent-router/.env`: `PORT=8080`, `GEMINI_API_KEY=<token>`, Redis endpoints as needed
+   - `apps/manifest-generator/.env` (optional): reuse Gemini credentials
 
-### Prerequisites
-- Node.js 18+ and pnpm
-- Google Cloud account (for Gemini API)
-- Docker and Docker Compose (for local development)
+## Development Workflow
+- Frontend dev server (port 3000):
+  ```bash
+  pnpm dev:frontend
+  ```
+- Intent router watcher (port 8080):
+  ```bash
+  pnpm dev:router
+  ```
+- Manifest generator local run (port 8081/CLI):
+  ```bash
+  pnpm dev:manifest
+  ```
+- Type safety sweep across workspaces:
+  ```bash
+  pnpm type-check
+  ```
 
-### Environment Setup
+## Quality & Testing
+- Frontend tests:
+  ```bash
+  pnpm --dir apps/frontend test:ci
+  ```
+- Router unit tests:
+  ```bash
+  pnpm --dir apps/intent-router test
+  ```
+- Lint and format (router/manifest):
+  ```bash
+  pnpm --dir apps/intent-router lint
+  pnpm --dir apps/intent-router format
+  pnpm --dir apps/manifest-generator lint
+  ```
+- Follow Jest naming `*.test.ts` beside implementations; mock Gemini/Redis for deterministic runs.
 
-1. Clone the repository:
-```bash
-git clone https://github.com/tsubouchi/agi_egg.git
-cd agi_egg
-```
+## Deployment Notes
+- Default service ports: frontend 3000, intent router 8080, manifest generator 8081.
+- Update `deploy/` manifests when application contracts change; reference `api/openapi.yaml` before publishing API updates.
+- Cloud Run builds typically run `pnpm --dir apps/<workspace> build` prior to containerization.
 
-2. Install dependencies:
-```bash
-pnpm install
-```
-
-3. Configure environment variables:
-
-Create `.env.local` in `nextjs-frontend/`:
-```env
-NEXT_PUBLIC_API_URL=http://localhost:8080
-```
-
-Create `.env` in `backend/intent-router/`:
-```env
-PORT=8080
-GEMINI_API_KEY=your_gemini_api_key_here
-```
-
-### Running Locally
-
-#### Using Docker Compose (Recommended):
-```bash
-docker-compose up --build
-```
-
-#### Manual Setup:
-
-1. Start the backend services:
-```bash
-# Terminal 1 - Intent Router
-cd backend/intent-router
-pnpm dev
-
-# Terminal 2 - Manifest Generator
-cd backend/manifest-generator
-pnpm dev
-```
-
-2. Start the frontend:
-```bash
-# Terminal 3 - Frontend
-cd nextjs-frontend
-pnpm dev
-```
-
-Access the application at `http://localhost:3000`
-
-## 🎯 Usage
-
-### Intent Recognition
-1. Navigate to the **Router** tab
-2. Enter your intent description or use sample requests
-3. View the AI-powered routing decision and confidence scores
-
-### Service Monitoring
-- Switch to the **Services** tab to view real-time health status
-- Monitor individual service metrics and availability
-
-### Analytics Dashboard
-- Access the **Analytics** tab for traffic patterns and performance metrics
-- View intent classification distribution and success rates
-
-### Manifest Management
-- Use the **Manifest** tab to generate optimized Cloud Run configurations
-- Review and approve AI-suggested improvements
-
-## 🔌 API Endpoints
-
-### Intent Router Service (Port 8080)
-
-#### POST /api/intent/recognize
-Analyzes intent and returns routing decision
-```json
-{
-  "text": "User wants to reset their password",
-  "context": {
-    "userId": "user-123",
-    "metadata": {}
-  }
-}
-```
-
-#### GET /api/health
-Returns service health status
-
-#### GET /api/metrics
-Provides performance metrics
-
-### Manifest Generator Service (Port 8081)
-
-#### POST /api/manifests/refresh
-Generates optimized manifest suggestions
-
-#### GET /api/manifests/:id
-Retrieves specific manifest version
-
-## 🚢 Deployment
-
-### Google Cloud Run
-
-1. Build and push container images:
-```bash
-# Build and push intent-router
-cd backend/intent-router
-gcloud builds submit --tag gcr.io/YOUR_PROJECT/intent-router
-
-# Build and push frontend
-cd nextjs-frontend
-gcloud builds submit --tag gcr.io/YOUR_PROJECT/frontend
-```
-
-2. Deploy services:
-```bash
-# Deploy intent-router
-gcloud run deploy intent-router \
-  --image gcr.io/YOUR_PROJECT/intent-router \
-  --platform managed \
-  --region us-central1 \
-  --allow-unauthenticated
-
-# Deploy frontend
-gcloud run deploy frontend \
-  --image gcr.io/YOUR_PROJECT/frontend \
-  --platform managed \
-  --region us-central1 \
-  --allow-unauthenticated
-```
-
-## 🧪 Testing
-
-Run tests across all packages:
-```bash
-pnpm test
-```
-
-Type checking:
-```bash
-pnpm type-check
-```
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## 📝 License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## 🏆 Acknowledgments
-
-- Built for the AGI Hackathon 2024
-- Powered by Google Gemini AI
-- Designed with modern web technologies
-
-## 📧 Contact
-
-For questions or support, please open an issue in the GitHub repository.
-
----
-
-Built with ❤️ by the AGI Egg Team
+## Contribution Guidelines
+- Use Conventional Commits (`feat:`, `fix:`, `chore:`) and keep changesets focused.
+- PR checklist: summary, linked issue/ticket, `pnpm` command logs, screenshots or Loom for UI tweaks, CI green.
+- Coordinate service ownership: tag frontend or router maintainers as appropriate and ensure docs under `docs/` stay aligned with shipped behavior.

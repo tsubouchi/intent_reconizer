@@ -1,17 +1,17 @@
 {
-  "buildCommand": "cd backend/intent-router && pnpm install && pnpm build",
-  "outputDirectory": "backend/intent-router/dist",
+  "buildCommand": "cd apps/intent-router && pnpm install && pnpm build",
+  "outputDirectory": "apps/intent-router/dist",
   "installCommand": "pnpm install",
   "framework": null,
   "functions": {
-    "backend/intent-router/dist/index.js": {
+    "apps/intent-router/dist/index.js": {
       "runtime": "@vercel/node@3.2.22"
     }
   },
   "rewrites": [
     {
       "source": "/(.*)",
-      "destination": "/backend/intent-router/dist/index.js"
+      "destination": "/apps/intent-router/dist/index.js"
     }
   ]
 }

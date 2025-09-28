@@ -1,4 +1,3 @@
 packages:
-  - nextjs-frontend
-  - backend/intent-router
-  - backend/manifest-generator
+  - apps/*
+  - packages/*

@@ -1,0 +1,709 @@
+openapi: 3.1.0
+info:
+  title: AGI Egg Autonomous Intelligent Router API
+  version: 2024-09-29
+  description: |
+    API surface for the AGI Egg Intelligent Router platform, covering streaming
+    session management, ingest endpoints, automated manifest dispatch, Intelligent
+    Model Selector (IMS) decisions, and the AGI Operations Layer (AOL) autonomy flows.
+servers:
+  - url: https://router.api.agi-egg.example
+    description: Production
+  - url: https://staging.router.api.agi-egg.example
+    description: Staging
+    variables: {}
+  - url: http://localhost:8080
+    description: Local development
+
+tags:
+  - name: Sessions
+  - name: Streaming
+  - name: Actions
+  - name: AOL
+
+paths:
+  /v1/sessions:
+    post:
+      tags: [Sessions]
+      summary: Create a streaming session
+      description: Provision a scoped streaming session and return ingest/stream endpoints plus autonomy defaults.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SessionCreateRequest'
+      responses:
+        '201':
+          description: Session created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionCreateResponse'
+        '400':
+          description: Invalid payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /v1/sessions/{sessionId}:
+    get:
+      tags: [Sessions]
+      summary: Get session state
+      parameters:
+        - $ref: '#/components/parameters/SessionId'
+      responses:
+        '200':
+          description: Session metadata including latest autonomy status and stream statistics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionState'
+        '404':
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags: [Sessions]
+      summary: Terminate a session
+      parameters:
+        - $ref: '#/components/parameters/SessionId'
+      responses:
+        '204':
+          description: Session terminated
+        '404':
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /v1/ingest:
+    post:
+      tags: [Streaming]
+      summary: Push a text ingest event for a session
+      parameters:
+        - $ref: '#/components/parameters/SessionIdQuery'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IngestTextRequest'
+      responses:
+        '202':
+          description: Event accepted
+        '400':
+          description: Invalid payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /v1/ingest/audio:
+    post:
+      tags: [Streaming]
+      summary: Push an audio chunk for transcription
+      parameters:
+        - $ref: '#/components/parameters/SessionIdQuery'
+        - in: header
+          name: Content-Type
+          required: true
+          schema:
+            type: string
+            enum: [audio/webm, audio/ogg, audio/wav]
+      requestBody:
+        required: true
+        content:
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
+      responses:
+        '202':
+          description: Audio chunk accepted for transcription
+        '400':
+          description: Invalid audio payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /v1/infer:
+    post:
+      tags: [Streaming]
+      summary: Run an on-demand inference using cached session context
+      parameters:
+        - $ref: '#/components/parameters/SessionIdQuery'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InferRequest'
+      responses:
+        '200':
+          description: Inference result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InferenceResponse'
+        '400':
+          description: Invalid payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /v1/actions/dispatch:
+    post:
+      tags: [Actions]
+      summary: Dispatch a manifest or downstream action generated from the stream
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActionDispatchRequest'
+      responses:
+        '200':
+          description: Action dispatched
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActionDispatchResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Policy denied or pending review
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /v1/aol/proposals:
+    get:
+      tags: [AOL]
+      summary: List active AOL proposals
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [pending, executing, completed, rejected]
+        - in: query
+          name: scope
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Active proposals
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AOLProposal'
+    post:
+      tags: [AOL]
+      summary: Submit a new AOL proposal
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AOLProposalInput'
+      responses:
+        '201':
+          description: Proposal recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AOLProposal'
+        '400':
+          description: Invalid payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /v1/aol/proposals/{proposalId}/execute:
+    post:
+      tags: [AOL]
+      summary: Execute an approved AOL proposal
+      parameters:
+        - $ref: '#/components/parameters/ProposalId'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AOLActionRequest'
+      responses:
+        '200':
+          description: Execution accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AOLActionResponse'
+        '409':
+          description: Proposal not in executable state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /v1/aol/proposals/{proposalId}/rollback:
+    post:
+      tags: [AOL]
+      summary: Roll back a previously executed playbook
+      parameters:
+        - $ref: '#/components/parameters/ProposalId'
+      requestBody:
+        required: false
+      responses:
+        '200':
+          description: Rollback initiated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AOLActionResponse'
+        '409':
+          description: Proposal not eligible for rollback
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  parameters:
+    SessionId:
+      name: sessionId
+      in: path
+      required: true
+      description: Unique session identifier returned by POST /v1/sessions
+      schema:
+        type: string
+        pattern: "^sess_[A-Za-z0-9]+$"
+    SessionIdQuery:
+      name: sessionId
+      in: query
+      required: true
+      schema:
+        type: string
+        pattern: "^sess_[A-Za-z0-9]+$"
+    ProposalId:
+      name: proposalId
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: "^prop_[A-Za-z0-9]+$"
+
+  schemas:
+    AutonomyMode:
+      type: string
+      enum: [observe, propose, act_scoped, act_global]
+
+    SessionScope:
+      type: object
+      required: [allowedDomains, maxContextTokens, maxCostUSD, piiPolicy, lang]
+      properties:
+        allowedDomains:
+          type: array
+          items:
+            type: string
+        maxContextTokens:
+          type: integer
+          minimum: 128
+        maxCostUSD:
+          type: number
+          minimum: 0
+        piiPolicy:
+          type: string
+          enum: [mask, redact, reject]
+        lang:
+          type: string
+        autonomyDefaultMode:
+          $ref: '#/components/schemas/AutonomyMode'
+        autonomyGuardrails:
+          type: object
+          description: Additional constraints applied to AOL autonomy
+          properties:
+            maxActScopes:
+              type: array
+              items:
+                type: string
+            requireApprovalFor:
+              type: array
+              items:
+                type: string
+    ClientInfo:
+      type: object
+      required: [ua, origin]
+      properties:
+        ua:
+          type: string
+        origin:
+          type: string
+        actorId:
+          type: string
+        roles:
+          type: array
+          items:
+            type: string
+
+    SessionCreateRequest:
+      type: object
+      required: [tenantId, projectId, scope, client]
+      properties:
+        tenantId:
+          type: string
+        projectId:
+          type: string
+        scope:
+          $ref: '#/components/schemas/SessionScope'
+        client:
+          $ref: '#/components/schemas/ClientInfo'
+        tags:
+          type: array
+          items:
+            type: string
+
+    SessionCreateResponse:
+      type: object
+      required: [sessionId, ingest, streamUrl, autonomyMode, expiresAt]
+      properties:
+        sessionId:
+          type: string
+        ingest:
+          type: object
+          required: [textUrl, audioUrl]
+          properties:
+            textUrl:
+              type: string
+              format: uri
+            audioUrl:
+              type: string
+              format: uri
+        streamUrl:
+          type: string
+          format: uri
+        autonomyMode:
+          $ref: '#/components/schemas/AutonomyMode'
+        expiresAt:
+          type: string
+          format: date-time
+        scope:
+          $ref: '#/components/schemas/SessionScope'
+
+    SessionState:
+      type: object
+      properties:
+        sessionId:
+          type: string
+        status:
+          type: string
+          enum: [active, idle, closed]
+        autonomyMode:
+          $ref: '#/components/schemas/AutonomyMode'
+        metrics:
+          type: object
+          properties:
+            streamLatencyP95Ms:
+              type: number
+            costPerActiveMinute:
+              type: number
+            imsAccuracy:
+              type: number
+        lastIntent:
+          $ref: '#/components/schemas/IntentUpdate'
+        lastModelDecision:
+          $ref: '#/components/schemas/ModelDecision'
+        activeProposals:
+          type: array
+          items:
+            $ref: '#/components/schemas/AOLProposal'
+
+    IngestTextRequest:
+      type: object
+      required: [type, text]
+      properties:
+        type:
+          type: string
+          enum: [text]
+        text:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        metadata:
+          type: object
+          additionalProperties: true
+
+    InferRequest:
+      type: object
+      required: [text]
+      properties:
+        text:
+          type: string
+        snapshot:
+          type: boolean
+          default: false
+
+    InferenceResponse:
+      type: object
+      properties:
+        intent:
+          type: string
+        confidence:
+          type: number
+        modelDecision:
+          $ref: '#/components/schemas/ModelDecision'
+        policyDecision:
+          $ref: '#/components/schemas/PolicyDecision'
+        summary:
+          type: string
+        slots:
+          type: object
+          additionalProperties: true
+
+    ModelDecision:
+      type: object
+      required: [modelId, rationale]
+      properties:
+        modelId:
+          type: string
+        rationale:
+          type: string
+        costClass:
+          type: string
+          enum: [low, medium, high]
+        latencyBudgetMs:
+          type: integer
+        overrides:
+          type: boolean
+        fallbackChain:
+          type: array
+          items:
+            type: string
+
+    IntentUpdate:
+      type: object
+      required: [intent, confidence]
+      properties:
+        intent:
+          type: string
+        confidence:
+          type: number
+        slots:
+          type: object
+          additionalProperties: true
+        selectedModel:
+          type: string
+        safetyFlags:
+          type: array
+          items:
+            type: string
+
+    PolicyDecision:
+      type: object
+      required: [action, reason]
+      properties:
+        action:
+          type: string
+          enum: [AUTO, REVIEW, DENY]
+        reason:
+          type: string
+        riskScore:
+          type: number
+        estimatedCost:
+          type: number
+        guardrailFlags:
+          type: array
+          items:
+            type: string
+
+    ActionDispatchRequest:
+      type: object
+      required: [sessionId, intent, resolution]
+      properties:
+        sessionId:
+          type: string
+        intent:
+          $ref: '#/components/schemas/IntentUpdate'
+        resolution:
+          type: object
+          description: Manifest resolution or downstream action payload
+          additionalProperties: true
+        dryRun:
+          type: boolean
+          default: false
+
+    ActionDispatchResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [ok, pending, failed]
+        result:
+          type: object
+          additionalProperties: true
+        rollbackToken:
+          type: string
+        policyDecision:
+          $ref: '#/components/schemas/PolicyDecision'
+
+    AOLProposalInput:
+      type: object
+      required: [summary, scope, playbookId]
+      properties:
+        summary:
+          type: string
+        scope:
+          type: string
+        playbookId:
+          type: string
+        severity:
+          type: string
+          enum: [info, warning, critical]
+        autonomyModeRequested:
+          $ref: '#/components/schemas/AutonomyMode'
+        detector:
+          type: object
+          properties:
+            id:
+              type: string
+            confidence:
+              type: number
+            metrics:
+              type: object
+              additionalProperties:
+                type: number
+        impactEstimate:
+          type: string
+        steps:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlaybookStep'
+        verify:
+          type: array
+          items:
+            $ref: '#/components/schemas/VerificationTarget'
+
+    AOLProposal:
+      allOf:
+        - $ref: '#/components/schemas/AOLProposalInput'
+        - type: object
+          required: [proposalId, status, createdAt]
+          properties:
+            proposalId:
+              type: string
+            status:
+              type: string
+              enum: [pending, queued, executing, completed, rejected]
+            autonomyModeGranted:
+              $ref: '#/components/schemas/AutonomyMode'
+            createdAt:
+              type: string
+              format: date-time
+            updatedAt:
+              type: string
+              format: date-time
+            execution:
+              type: object
+              properties:
+                startedAt:
+                  type: string
+                  format: date-time
+                completedAt:
+                  type: string
+                  format: date-time
+                outcome:
+                  type: string
+                  enum: [success, partial, failed]
+                metrics:
+                  type: object
+                  additionalProperties:
+                    type: number
+
+    PlaybookStep:
+      type: object
+      required: [name, tool]
+      properties:
+        name:
+          type: string
+        tool:
+          type: string
+        args:
+          type: object
+          additionalProperties: true
+
+    VerificationTarget:
+      type: object
+      required: [metric, success]
+      properties:
+        metric:
+          type: string
+        window:
+          type: string
+        success:
+          type: string
+
+    AOLActionRequest:
+      type: object
+      properties:
+        executor:
+          type: string
+        notes:
+          type: string
+
+    AOLActionResponse:
+      type: object
+      properties:
+        proposalId:
+          type: string
+        status:
+          type: string
+          enum: [queued, executing, completed]
+        startedAt:
+          type: string
+          format: date-time
+        message:
+          type: string
+
+    ErrorResponse:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
+          additionalProperties: true

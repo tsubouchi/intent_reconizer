@@ -1,0 +1,138 @@
+{
+  "collections": {
+    "sessions": {
+      "fields": {
+        "sessionId": { "type": "string" },
+        "tenantId": { "type": "string" },
+        "projectId": { "type": "string" },
+        "status": { "type": "enum", "values": ["active", "idle", "closed"] },
+        "autonomyMode": { "type": "enum", "values": ["observe", "propose", "act_scoped", "act_global"] },
+        "scope": {
+          "type": "object",
+          "fields": {
+            "allowedDomains": { "type": "array", "items": { "type": "string" } },
+            "maxContextTokens": { "type": "number" },
+            "maxCostUSD": { "type": "number" },
+            "piiPolicy": { "type": "enum", "values": ["mask", "redact", "reject"] },
+            "lang": { "type": "string" },
+            "autonomyDefaultMode": { "type": "enum", "values": ["observe", "propose", "act_scoped", "act_global"] },
+            "autonomyGuardrails": {
+              "type": "object",
+              "optional": true,
+              "fields": {
+                "maxActScopes": { "type": "array", "optional": true, "items": { "type": "string" } },
+                "requireApprovalFor": { "type": "array", "optional": true, "items": { "type": "string" } }
+              }
+            }
+          }
+        },
+        "metrics": {
+          "type": "object",
+          "optional": true,
+          "fields": {
+            "streamLatencyP95Ms": { "type": "number", "optional": true },
+            "costPerActiveMinute": { "type": "number", "optional": true },
+            "imsAccuracy": { "type": "number", "optional": true }
+          }
+        },
+        "lastIntent": {
+          "type": "object",
+          "optional": true,
+          "fields": {
+            "intent": { "type": "string" },
+            "confidence": { "type": "number" },
+            "slots": { "type": "record", "optional": true, "value": { "type": "any" } },
+            "selectedModel": { "type": "string", "optional": true },
+            "safetyFlags": { "type": "array", "optional": true, "items": { "type": "string" } },
+            "timestamp": { "type": "timestamp" }
+          }
+        },
+        "lastModelDecision": {
+          "type": "object",
+          "optional": true,
+          "fields": {
+            "modelId": { "type": "string" },
+            "rationale": { "type": "string" },
+            "costClass": { "type": "enum", "values": ["low", "medium", "high"] },
+            "latencyBudgetMs": { "type": "number", "optional": true },
+            "overrides": { "type": "boolean", "optional": true },
+            "fallbackChain": { "type": "array", "optional": true, "items": { "type": "string" } }
+          }
+        },
+        "activeProposals": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "fields": {
+              "proposalId": { "type": "string" },
+              "playbookId": { "type": "string" },
+              "summary": { "type": "string" },
+              "scope": { "type": "string" },
+              "severity": { "type": "enum", "values": ["info", "warning", "critical"] },
+              "status": { "type": "enum", "values": ["pending", "queued", "executing", "completed", "rejected"] },
+              "autonomyModeGranted": { "type": "enum", "values": ["observe", "propose", "act_scoped", "act_global"] },
+              "autonomyModeRequested": { "type": "enum", "optional": true, "values": ["observe", "propose", "act_scoped", "act_global"] },
+              "detector": {
+                "type": "object",
+                "optional": true,
+                "fields": {
+                  "id": { "type": "string" },
+                  "confidence": { "type": "number" },
+                  "metrics": { "type": "record", "optional": true, "value": { "type": "number" } }
+                }
+              },
+              "impactEstimate": { "type": "string", "optional": true },
+              "steps": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "fields": {
+                    "name": { "type": "string" },
+                    "tool": { "type": "string" },
+                    "args": { "type": "record", "optional": true, "value": { "type": "any" } }
+                  }
+                }
+              },
+              "verify": {
+                "type": "array",
+                "optional": true,
+                "items": {
+                  "type": "object",
+                  "fields": {
+                    "metric": { "type": "string" },
+                    "window": { "type": "string", "optional": true },
+                    "success": { "type": "string" }
+                  }
+                }
+              },
+              "execution": {
+                "type": "object",
+                "optional": true,
+                "fields": {
+                  "startedAt": { "type": "timestamp", "optional": true },
+                  "completedAt": { "type": "timestamp", "optional": true },
+                  "outcome": { "type": "enum", "optional": true, "values": ["success", "partial", "failed"] },
+                  "metrics": { "type": "record", "optional": true, "value": { "type": "number" } }
+                }
+              },
+              "createdAt": { "type": "timestamp" },
+              "updatedAt": { "type": "timestamp" }
+            }
+          }
+        },
+        "expiresAt": { "type": "timestamp" },
+        "createdAt": { "type": "timestamp" },
+        "updatedAt": { "type": "timestamp" }
+      }
+    },
+    "intentEvents": {
+      "fields": {
+        "sessionId": { "type": "string" },
+        "traceId": { "type": "string" },
+        "type": { "type": "enum", "values": ["intent.update", "model.selector", "policy.decision", "action.dispatched"] },
+        "payload": { "type": "record", "value": { "type": "any" } },
+        "createdAt": { "type": "timestamp" }
+      }
+    }
+  }
+}

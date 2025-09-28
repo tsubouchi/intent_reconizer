@@ -1,19 +1,24 @@
-import express from 'express'
-import { ServiceRegistry } from '../services/ServiceRegistry'
+import { Router, Request, Response } from 'express';
 
-type ExpressRouter = ReturnType<typeof express.Router>
+const router = Router();
 
-export function healthRouter(serviceRegistry: ServiceRegistry): ExpressRouter {
-  const router = express.Router()
+router.get('/', (_req: Request, res: Response) => {
+  res.json({
+    status: 'healthy',
+    service: 'intent-router',
+    timestamp: new Date().toISOString(),
+    version: process.env.npm_package_version || '1.0.0',
+    environment: process.env.NODE_ENV || 'development'
+  });
+});
 
-  router.get('/', (_req, res) => {
-    res.json({ status: 'ok', timestamp: new Date().toISOString() })
-  })
+router.get('/ready', (_req: Request, res: Response) => {
+  // Check dependencies here (Firestore, Gemini API, etc.)
+  res.json({
+    status: 'ready',
+    service: 'intent-router',
+    timestamp: new Date().toISOString()
+  });
+});
 
-  router.get('/services', async (_req, res) => {
-    const health = await serviceRegistry.getAllHealthStatus()
-    res.json(health)
-  })
-
-  return router
-}
+export default router;
