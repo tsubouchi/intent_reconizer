@@ -1,6 +1,6 @@
 {
-  "buildCommand": "npm run build",
-  "installCommand": "npm install --ignore-scripts",
+  "buildCommand": "cd ../.. && cd apps/frontend && pnpm build",
+  "installCommand": "cd ../.. && pnpm install --frozen-lockfile --ignore-scripts",
   "framework": "nextjs",
   "outputDirectory": ".next"
 }

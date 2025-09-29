@@ -1,8 +1,8 @@
 {
   "framework": "nextjs",
-  "buildCommand": "cd apps/frontend && pnpm install && pnpm build",
+  "buildCommand": "cd apps/frontend && pnpm build",
   "outputDirectory": "apps/frontend/.next",
-  "installCommand": "pnpm install",
+  "installCommand": "pnpm install --frozen-lockfile --ignore-scripts",
   "ignoreCommand": "git diff HEAD^ HEAD --quiet .",
   "env": {
     "NEXT_PUBLIC_API_URL": "https://agi-egg-isr-router-1028435695123.us-central1.run.app",
