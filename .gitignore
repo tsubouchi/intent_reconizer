@@ -235,3 +235,4 @@ local-config.json
 **/local-config.json
 !local-config.json.sample
 !local-config.json.example
+.vercel

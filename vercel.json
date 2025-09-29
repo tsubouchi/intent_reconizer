@@ -1,11 +1,16 @@
 {
-  "rootDirectory": "apps/frontend",
-  "buildCommand": "pnpm build",
-  "outputDirectory": ".next",
-  "installCommand": "cd ../.. && pnpm install && cd apps/frontend",
   "framework": "nextjs",
+  "buildCommand": "cd apps/frontend && pnpm install && pnpm build",
+  "outputDirectory": "apps/frontend/.next",
+  "installCommand": "pnpm install",
+  "ignoreCommand": "git diff HEAD^ HEAD --quiet .",
   "env": {
-    "NEXT_PUBLIC_API_URL": "https://intent-router-1028435695123.asia-northeast1.run.app"
+    "NEXT_PUBLIC_API_URL": "https://intent-router-1028435695123.asia-northeast1.run.app",
+    "NEXT_PUBLIC_MANIFEST_API_URL": "https://intent-router-1028435695123.asia-northeast1.run.app",
+    "NEXT_PUBLIC_GCP_PROJECT_ID": "agi-egg-production",
+    "NEXT_PUBLIC_FIREBASE_API_KEY": "AIzaSyDX8EkeJkVhsqK76SWz-S_euDYhV4gHGKU",
+    "NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN": "agi-egg-production.firebaseapp.com",
+    "NEXT_PUBLIC_FIREBASE_PROJECT_ID": "agi-egg-production"
   },
   "headers": [
     {
@@ -22,5 +27,6 @@
         { "key": "X-XSS-Protection", "value": "1; mode=block" }
       ]
     }
-  ]
+  ],
+  "regions": ["iad1"]
 }
