@@ -1,10 +1,11 @@
 {
-  "buildCommand": "cd apps/frontend && pnpm build",
-  "outputDirectory": "apps/frontend/.next",
-  "installCommand": "pnpm install",
+  "rootDirectory": "apps/frontend",
+  "buildCommand": "pnpm build",
+  "outputDirectory": ".next",
+  "installCommand": "cd ../.. && pnpm install && cd apps/frontend",
   "framework": "nextjs",
   "env": {
-    "NEXT_PUBLIC_API_URL": "https://agi-egg-isr-router-1028435695123.us-central1.run.app"
+    "NEXT_PUBLIC_API_URL": "https://intent-router-1028435695123.asia-northeast1.run.app"
   },
   "headers": [
     {

@@ -75,21 +75,163 @@ temp/
 package-lock.json
 yarn.lock
 
-# GCP Secrets and Credentials
+# API Keys and Secrets - CRITICAL
+# Never commit API keys to repository
+**/api-keys/
+**/secrets/
+**/.secrets/
+**/credentials/
+**/.credentials/
+
+# LLM API Keys (Gemini, OpenAI, etc)
 gemini-key.txt
-firebase-config.json
-deploy/cloud-run/gemini-key.txt
-deploy/cloud-run/firebase-config.json
 **/gemini-key.txt
+openai-key.txt
+**/openai-key.txt
+anthropic-key.txt
+**/anthropic-key.txt
+*api-key*
+*api_key*
+*apikey*
+*API_KEY*
+*APIKEY*
+
+# Firebase and GCP Credentials
+firebase-config.json
 **/firebase-config.json
-service-account-key.json
-**/service-account-key.json
+service-account*.json
+**/service-account*.json
+gcp-credentials*.json
+**/gcp-credentials*.json
+google-credentials*.json
+**/google-credentials*.json
+*.serviceaccount.json
+firebase-admin*.json
+firebase-service*.json
+
+# Redis and Database Credentials
+redis-credentials.json
+**/redis-credentials.json
+redis.conf
+**/redis.conf
+database-config.json
+**/database-config.json
+
+# OAuth and Authentication
+client_secret*.json
+**/client_secret*.json
+oauth-credentials.json
+**/oauth-credentials.json
+auth-config.json
+**/auth-config.json
+
+# SSL/TLS Certificates and Keys
 *.pem
 *.key
 *.crt
 *.p12
+*.pfx
+*.cert
+*.cer
+*.ca-bundle
+*.csr
+private-key*.pem
+**/private-key*.pem
+
+# JWT and Session Secrets
+jwt-secret*
+**/jwt-secret*
+session-secret*
+**/session-secret*
+
+# Deployment Secrets
+deploy-secrets.sh
+**/deploy-secrets.sh
+deploy-with-secrets.sh
+**/deploy-with-secrets.sh
+setup-secrets.sh
+**/setup-secrets.sh
+
+# Cloud Provider Credentials
+aws-credentials
+**/aws-credentials
+.aws/
+**/.aws/
+azure-credentials
+**/azure-credentials
 
 # GCP deployment artifacts
 .gcloudignore
 deploy/cloud-run/dashboard.json
 deploy/cloud-run/alert-policy.yaml
+
+# Additional Security Patterns
+# Webhook URLs and Tokens
+*webhook*secret*
+*webhook*token*
+**/webhook-config.json
+
+# Stripe, PayPal, and Payment Keys
+stripe-key*
+**/stripe-key*
+paypal-key*
+**/paypal-key*
+payment-config.json
+**/payment-config.json
+
+# Docker and Container Secrets
+docker-secrets/
+**/docker-secrets/
+.dockerconfigjson
+**/.dockerconfigjson
+
+# Kubernetes Secrets
+kubeconfig
+**/kubeconfig
+k8s-secrets/
+**/k8s-secrets/
+
+# Backup and Dump Files
+*.sql
+*.dump
+*.bak
+*.backup
+*-backup*
+database-dump*
+
+# Private Configuration
+private-config/
+**/private-config/
+config.private.json
+**/config.private.json
+settings.private.json
+**/settings.private.json
+
+# SSH Keys
+id_rsa*
+id_dsa*
+id_ecdsa*
+id_ed25519*
+known_hosts
+authorized_keys
+*.ppk
+
+# Terraform State (may contain secrets)
+*.tfstate
+*.tfstate.*
+.terraform/
+**/.terraform/
+
+# Ansible Vault
+vault-password*
+**/vault-password*
+ansible-vault*
+
+# Local development overrides with potential secrets
+*.local
+!*.local.sample
+!*.local.example
+local-config.json
+**/local-config.json
+!local-config.json.sample
+!local-config.json.example
