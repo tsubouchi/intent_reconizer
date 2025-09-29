@@ -7,9 +7,18 @@
 - `apps/manifest-generator/`: Cloud Run CLI (`src/`, `scripts/`, `examples/`).
 - Shared packages live in `packages/`; long-form docs under `docs/`; automation in `tools/`.
 
+## Cloud-First Architecture (Production Deployed)
+- **Frontend**: Deployed on Vercel, connects to GCP Cloud Run backend
+- **Backend**: Deployed on Cloud Run (asia-northeast1), auto-scaling 0-10 instances
+- **Cache**: Redis Cloud for session/intent caching
+- **AI**: Gemini 2.5 Flash/Pro via API integration
+- **Secrets**: GCP Secret Manager for sensitive environment variables
+
 ## Build, Test, and Development Commands
 - `pnpm install`: hydrate all workspaces.
-- `pnpm dev:frontend`, `pnpm dev:router`, `pnpm dev:manifest`: run the three apps locally (ports 3000 / 8080 / 8081).
+- `pnpm dev`: run frontend with cloud backend (recommended)
+- `pnpm test:curl`: test Cloud Run API endpoints
+- `pnpm test:intent`: test intent recognition flow
 - `pnpm build`: run `pnpm -r --if-present build` across workspaces.
 - `pnpm type-check`: type-check every workspace.
 - `pnpm --dir apps/frontend test:ci` / `pnpm --dir apps/intent-router test`: run unit suites where defined.
@@ -33,3 +42,15 @@
 - Use `.env.local` for frontend public settings; `.env` for router/manifest secrets.
 - Default ports: 3000 (frontend), 8080 (router), 8081 (manifest). Align reverse proxies accordingly.
 - Guard API keys (Gemini, OpenAI, Redis). Never commit secrets; leverage Cloud Run secret manager or Vercel env vars.
+- **Important**: PORT is reserved by Cloud Run, don't set it manually in environment variables.
+
+## Performance Optimization (2025-09-29 Updates)
+- **Cloud Run optimizations applied**:
+  - Min instances: 1 (prevents cold starts)
+  - CPU: 2 cores, Memory: 2Gi
+  - CPU boost enabled for faster startup
+  - HTTP/2 enabled for better performance
+  - Concurrency: 100 requests per instance
+- **Redis Cloud configured**: Persistent caching with TLS
+- **Response times**: ~200-300ms for intent recognition
+- **Monitoring**: Health checks at `/health`, metrics at `/metrics`

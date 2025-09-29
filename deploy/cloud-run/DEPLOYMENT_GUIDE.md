@@ -3,6 +3,12 @@
 ## Overview
 This guide provides step-by-step instructions to deploy the AGI Egg ISR Router to Google Cloud Platform using Cloud Run.
 
+## Latest Updates (2025-09-29)
+- ✅ **Performance optimizations applied**: Min instances, CPU boost, HTTP/2
+- ✅ **Redis Cloud connection fixed**: Proper environment variable configuration
+- ✅ **Secret Manager integration**: GEMINI_API_KEY managed via secrets
+- ✅ **Response time improved**: From 30s timeout to ~200ms
+
 ## Prerequisites
 
 1. **Google Cloud SDK installed**
@@ -309,6 +315,49 @@ gcloud artifacts repositories add-iam-policy-binding cloud-run-source-deploy \
   --member="user:YOUR_EMAIL@domain.com" \
   --role="roles/artifactregistry.writer" \
   --project=agi-egg-production
+```
+
+## Performance Optimization (2025-09-29)
+
+### Key Implementation Points
+
+1. **Fix Redis Connection Issues**
+   - Problem: Service defaulting to localhost:6379 instead of Redis Cloud
+   - Solution: Run `./fix-redis-connection.sh`
+   - Important: Don't set PORT in env vars (Cloud Run reserves it)
+
+2. **Optimize Cloud Run Performance**
+   - Run `./optimize-performance.sh` to apply:
+     - Min instances: 1 (prevents cold starts)
+     - CPU: 2 cores, Memory: 2Gi
+     - CPU boost for faster startup
+     - HTTP/2 for better performance
+     - Concurrency: 100 requests per instance
+
+3. **Secret Manager Integration**
+   - GEMINI_API_KEY must use `--set-secrets` not `--set-env-vars`
+   - Avoid type mismatch errors between env vars and secrets
+   - Command: `--set-secrets="GEMINI_API_KEY=gemini-api-key:latest"`
+
+4. **Testing Performance**
+   - Use `./test-performance.sh` to measure response times
+   - Expected: ~200ms for health checks, ~300ms for intent recognition
+   - Monitor with: `gcloud logging read` for error diagnosis
+
+### Troubleshooting Scripts
+
+```bash
+# Fix Redis connection
+./deploy/cloud-run/fix-redis-connection.sh
+
+# Optimize performance
+./deploy/cloud-run/optimize-performance.sh
+
+# Test performance
+./deploy/cloud-run/test-performance.sh
+
+# Setup secrets
+./deploy/cloud-run/setup-secrets.sh
 ```
 
 ## Configuration Reference

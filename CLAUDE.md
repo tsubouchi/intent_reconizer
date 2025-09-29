@@ -302,12 +302,32 @@ pnpm test:curl   # API endpoint tests
 - Check CORS settings in backend allow localhost:3000
 - Ensure Cloud Run service is deployed and running
 
-### Redis Connection Issues
-- Verify `REDIS_URL` credentials are correct
-- Check Redis Cloud dashboard for connection limits
+### Redis Connection Issues (RESOLVED 2025-09-29)
+- **Problem**: Service trying to connect to localhost:6379 instead of Redis Cloud
+- **Solution**: Run `./deploy/cloud-run/fix-redis-connection.sh`
+- **Key Points**:
+  - REDIS_URL must point to Redis Cloud endpoint
+  - Don't set PORT in environment variables (Cloud Run reserves it)
+  - Use `--update-env-vars` for regular variables, `--set-secrets` for secret-backed ones
 - Backend falls back to in-memory cache if Redis unavailable
 
 ### Gemini API Errors
-- Verify `GEMINI_API_KEY` is valid and not expired
+- **Type Mismatch Error**: GEMINI_API_KEY might be set as both env var and secret
+  - Solution: Use `--set-secrets="GEMINI_API_KEY=gemini-api-key:latest"`
+- Verify API key is valid and not expired
 - Check quota limits in Google AI Studio
 - Review model-specific token limits
+
+### Performance Issues
+- **Slow Response Times**: Run `./deploy/cloud-run/optimize-performance.sh`
+- **Cold Starts**: Ensure min instances ≥ 1
+- **Protocol Errors**: Check service logs with:
+  ```bash
+  gcloud logging read "resource.type=cloud_run_revision AND resource.labels.service_name=agi-egg-isr-router" --limit=10
+  ```
+
+### Deployment Scripts
+- **Fix Redis**: `deploy/cloud-run/fix-redis-connection.sh`
+- **Optimize Performance**: `deploy/cloud-run/optimize-performance.sh`
+- **Test Performance**: `deploy/cloud-run/test-performance.sh`
+- **Setup Secrets**: `deploy/cloud-run/setup-secrets.sh`

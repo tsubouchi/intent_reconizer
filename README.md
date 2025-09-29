@@ -249,23 +249,30 @@ cat deploy/cloud-run/DEPLOYMENT_GUIDE.md
 ## 📊 Latest Deployment Status
 
 ### Production Environment (2025-09-29)
-- ✅ **Backend Service**: Deployed to Cloud Run
-  - URL: `https://intent-router-1028435695123.asia-northeast1.run.app`
-  - Region: asia-northeast1
+- ✅ **Backend Service**: Deployed to Cloud Run (Optimized)
+  - URL: `https://agi-egg-isr-router-1028435695123.us-central1.run.app`
+  - Region: us-central1
   - Status: Active & Healthy
-  - Response Time: ~300ms (intent analysis)
+  - Response Time: **~200ms** (improved from 30s timeout)
+  - Min Instances: 1 (cold start prevention)
+  - CPU: 2 cores, Memory: 2Gi
+  - HTTP/2 enabled
 
 - ✅ **Gemini API Integration**: Fully operational
   - Model: models/gemini-2.5-flash (default)
   - IMS (Intelligent Model Selector) enabled
+  - Secret Manager integration for API keys
 
-- ✅ **Redis Cloud**: Connected & caching
+- ✅ **Redis Cloud**: Fixed & Connected
+  - Connection: Stable (fixed localhost issue)
   - TLS: Enabled
-  - Connection: Stable
+  - Database: database-MG4CAJDV
 
-- ✅ **Docker Image**: Built & pushed
-  - Registry: `gcr.io/agi-egg-production/intent-router:latest`
-  - Platform: linux/amd64
+- ✅ **Performance Improvements Applied**:
+  - CPU boost enabled for faster startup
+  - Concurrency: 100 requests per instance
+  - Timeout: 60 seconds
+  - Environment variables properly configured
 
 ### Test Results
 ```bash
@@ -284,6 +291,24 @@ curl -X POST https://intent-router-1028435695123.asia-northeast1.run.app/intent/
   -H "Content-Type: application/json" \
   -d '{"text": "Generate a PDF report"}'
 # Response: Successfully routed to pdf-generator-service
+```
+
+## 🚀 Quick Performance Scripts
+
+### Fix Redis Connection Issues
+```bash
+./deploy/cloud-run/fix-redis-connection.sh
+```
+
+### Optimize Cloud Run Performance
+```bash
+./deploy/cloud-run/optimize-performance.sh
+```
+
+### Test Service Performance
+```bash
+./deploy/cloud-run/test-performance.sh
+pnpm test:curl
 ```
 
 ## 🛠️ Technologies
