@@ -12,7 +12,7 @@ const IntentRequestSchema = z.object({
   context: z.object({
     tenantId: z.string().optional(),
     userId: z.string().optional(),
-    metadata: z.record(z.any()).optional()
+    metadata: z.record(z.string(), z.any()).optional()
   }).optional()
 });
 

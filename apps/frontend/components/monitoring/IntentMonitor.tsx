@@ -35,7 +35,7 @@ export function IntentMonitor() {
     }
   }, [])
 
-  const statusText = isHealthy === null ? 'チェック中…' : isHealthy ? 'オンライン' : 'オフライン'
+  const statusText = isHealthy === null ? 'Checking...' : isHealthy ? 'Online' : 'Offline'
   const statusClass =
     isHealthy === null
       ? 'border border-[rgba(255,255,255,0.16)] bg-[rgba(255,255,255,0.08)]'
@@ -49,10 +49,10 @@ export function IntentMonitor() {
         <div className="glass-card glass-outline flex flex-col gap-3 rounded-2xl px-6 py-5 text-sm text-[var(--text-muted)] sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
             <span className={`status-chip ${statusClass}`}>Router {statusText}</span>
-            {lastUpdated && <span className="text-xs uppercase tracking-[0.3em] text-[var(--text-soft)]">最終更新 {lastUpdated.toLocaleTimeString()}</span>}
+            {lastUpdated && <span className="text-xs uppercase tracking-[0.3em] text-[var(--text-soft)]">Last updated {lastUpdated.toLocaleTimeString()}</span>}
           </div>
           <p className="text-xs leading-relaxed">
-            バックエンドが停止している場合、メトリクスとマニフェスト機能はプレースホルダーデータになります。`NEXT_PUBLIC_ROUTER_API_URL` を更新して接続を確認してください。
+            When the backend is unavailable the metrics and manifest experience fall back to placeholder data. Update `NEXT_PUBLIC_ROUTER_API_URL` to point at a reachable router instance before relying on this dashboard.
           </p>
         </div>
       </div>

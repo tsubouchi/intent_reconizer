@@ -51,7 +51,7 @@ export function useManifestRefresher(selectedService?: string) {
       setSummariesState((prev) => ({ ...prev, data, isLoading: false, error: null }))
     } catch (error) {
       console.error(error)
-      setSummariesState((prev) => ({ ...prev, data: undefined, isLoading: false, error: 'マニフェスト一覧の取得に失敗しました。' }))
+      setSummariesState((prev) => ({ ...prev, data: undefined, isLoading: false, error: 'Failed to load manifest summaries.' }))
     }
   }, [])
 
@@ -67,7 +67,7 @@ export function useManifestRefresher(selectedService?: string) {
       setDetailState((prev) => ({ ...prev, data, isLoading: false, error: null }))
     } catch (error) {
       console.error(error)
-      setDetailState((prev) => ({ ...prev, data: undefined, isLoading: false, error: 'マニフェスト詳細の取得に失敗しました。' }))
+      setDetailState((prev) => ({ ...prev, data: undefined, isLoading: false, error: 'Failed to load manifest detail.' }))
     }
   }, [selectedService])
 
@@ -78,7 +78,7 @@ export function useManifestRefresher(selectedService?: string) {
       setJobsState((prev) => ({ ...prev, data, isLoading: false, error: null }))
     } catch (error) {
       console.error(error)
-      setJobsState((prev) => ({ ...prev, data: undefined, isLoading: false, error: 'ジョブ履歴の取得に失敗しました。' }))
+      setJobsState((prev) => ({ ...prev, data: undefined, isLoading: false, error: 'Failed to load manifest job history.' }))
     }
   }, [])
 
@@ -137,7 +137,7 @@ export function useManifestRefresher(selectedService?: string) {
         await Promise.all([loadSummaries(), loadJobs(), loadDetail()])
       } catch (error) {
         console.error(error)
-        setRefreshError('リフレッシュの実行に失敗しました。')
+        setRefreshError('Manifest refresh failed to start.')
       } finally {
         setIsRefreshing(false)
       }
@@ -158,7 +158,7 @@ export function useManifestRefresher(selectedService?: string) {
         }
       } catch (error) {
         console.error(error)
-        setApproveError('承認に失敗しました。')
+        setApproveError('Failed to approve manifest job.')
       } finally {
         setIsApproving(false)
       }
@@ -179,7 +179,7 @@ export function useManifestRefresher(selectedService?: string) {
         }
       } catch (error) {
         console.error(error)
-        setRollbackError('ロールバックに失敗しました。')
+        setRollbackError('Failed to roll back manifest job.')
       } finally {
         setIsRollingBack(false)
       }

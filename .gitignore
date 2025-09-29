@@ -74,3 +74,22 @@ temp/
 # Lockfiles (pnpm lockfile tracked)
 package-lock.json
 yarn.lock
+
+# GCP Secrets and Credentials
+gemini-key.txt
+firebase-config.json
+deploy/cloud-run/gemini-key.txt
+deploy/cloud-run/firebase-config.json
+**/gemini-key.txt
+**/firebase-config.json
+service-account-key.json
+**/service-account-key.json
+*.pem
+*.key
+*.crt
+*.p12
+
+# GCP deployment artifacts
+.gcloudignore
+deploy/cloud-run/dashboard.json
+deploy/cloud-run/alert-policy.yaml

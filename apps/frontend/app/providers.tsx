@@ -1,7 +1,7 @@
 'use client'
 
-import type { ReactNode } from 'react'
+import type { PropsWithChildren } from 'react'
 
-export function Providers({ children }: { children: ReactNode }) {
+export function Providers({ children }: PropsWithChildren<unknown>) {
   return <>{children}</>
 }

@@ -23,7 +23,7 @@ export function ServiceHealth() {
       } catch (fetchError) {
         console.error(fetchError)
         if (isMounted) {
-          setError('サービスのヘルス情報を取得できませんでした。Intent Router の `/health/services` が応答しているか確認してください。')
+          setError('Unable to retrieve service health. Ensure the Intent Router `/health/services` endpoint is responding.')
         }
       } finally {
         if (isMounted) {
@@ -42,7 +42,7 @@ export function ServiceHealth() {
   }, [])
 
   if (isLoading) {
-    return <p className="text-sm text-[var(--text-muted)]">サービスの状態を読み込み中...</p>
+    return <p className="text-sm text-[var(--text-muted)]">Loading service status...</p>
   }
 
   if (error) {
@@ -50,7 +50,7 @@ export function ServiceHealth() {
   }
 
   if (!services.length) {
-    return <p className="text-sm text-[var(--text-muted)]">表示するサービスの情報がありません。</p>
+    return <p className="text-sm text-[var(--text-muted)]">No service health data available.</p>
   }
 
   return (
@@ -79,19 +79,19 @@ export function ServiceHealth() {
 
           <dl className="mt-4 space-y-2 text-sm text-[var(--text-muted)]">
             <div className="flex justify-between">
-              <dt>レイテンシ</dt>
+              <dt>Latency</dt>
               <dd>{service.latency} ms</dd>
             </div>
             <div className="flex justify-between">
-              <dt>エラーレート</dt>
+              <dt>Error Rate</dt>
               <dd>{(service.errorRate * 100).toFixed(2)}%</dd>
             </div>
             <div className="flex justify-between">
-              <dt>スループット</dt>
+              <dt>Throughput</dt>
               <dd>{service.throughput} rpm</dd>
             </div>
             <div className="flex justify-between">
-              <dt>最終チェック</dt>
+              <dt>Last Check</dt>
               <dd className="text-[var(--text-primary)]">{new Date(service.lastChecked).toLocaleString()}</dd>
             </div>
           </dl>

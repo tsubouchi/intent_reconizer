@@ -25,6 +25,7 @@ export class IntentRecognitionEngine {
   private tokenizer: natural.TreebankWordTokenizer
   private tfidf: natural.TfIdf
   private classifier: natural.BayesClassifier
+  private redisUnavailableLogged = false
 
   constructor(
     private serviceRegistry: ServiceRegistry,
@@ -465,6 +466,20 @@ export class IntentRecognitionEngine {
   }
 
   private async getFromCache(key: string): Promise<IntentResponse | null> {
+    if (!this.redis?.get) {
+      return null
+    }
+
+    if (!this.isRedisReady()) {
+      if (!this.redisUnavailableLogged) {
+        this.logger.warn('Redis cache not ready; skipping lookup')
+        this.redisUnavailableLogged = true
+      }
+      return null
+    }
+
+    this.redisUnavailableLogged = false
+
     try {
       const data = await this.redis.get(key)
       if (data) {
@@ -477,12 +492,39 @@ export class IntentRecognitionEngine {
   }
 
   private async cacheResult(key: string, result: IntentResponse): Promise<void> {
+    if (!this.redis?.setex) {
+      return
+    }
+
+    if (!this.isRedisReady()) {
+      if (!this.redisUnavailableLogged) {
+        this.logger.warn('Redis cache not ready; skipping write')
+        this.redisUnavailableLogged = true
+      }
+      return
+    }
+
+    this.redisUnavailableLogged = false
+
     try {
       const ttl = this.metaRoutingConfig?.routingStrategies?.caching?.ttl || 300
       await this.redis.setex(key, ttl, JSON.stringify(result))
     } catch (error) {
       this.logger.error('Cache set error:', error)
     }
+  }
+
+  private isRedisReady(): boolean {
+    if (!this.redis) {
+      return false
+    }
+
+    const status = (this.redis as { status?: string }).status
+    if (typeof status === 'string') {
+      return status === 'ready'
+    }
+
+    return true
   }
 
   private getDefaultMetaRoutingConfig(): MetaRoutingConfig {

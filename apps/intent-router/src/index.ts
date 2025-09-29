@@ -1,3 +1,5 @@
+import path from 'path'
+import { config as loadEnv } from 'dotenv'
 import express, { type Application } from 'express'
 import cors from 'cors'
 import { createServer } from 'http'
@@ -16,6 +18,19 @@ import { metricsRouter } from './routes/metrics'
 import { configRouter } from './routes/config'
 import { manifestsRouter } from './routes/manifests'
 import { ManifestRefresherService } from './services/ManifestRefresher'
+
+const envFiles = [
+  path.resolve(process.cwd(), '.env'),
+  path.resolve(process.cwd(), '.env.local'),
+  path.resolve(__dirname, '..', '.env'),
+  path.resolve(__dirname, '..', '.env.local'),
+  path.resolve(__dirname, '..', '..', '.env'),
+  path.resolve(__dirname, '..', '..', '.env.local')
+]
+
+for (const envPath of [...new Set(envFiles)]) {
+  loadEnv({ path: envPath, override: false })
+}
 
 const logger = pino({
   level: process.env.LOG_LEVEL || 'info',
@@ -69,13 +84,144 @@ const activeConnections = new Gauge({
   help: 'Active connections'
 })
 
+type RedisClient = {
+  get(key: string): Promise<string | null>
+  setex(key: string, ttl: number, value: string): Promise<'OK'>
+  disconnect(): void
+  on(event: string, handler: (...args: any[]) => void): void
+  status?: string
+}
+
+const redisRetryStrategy = (attempts: number): number => Math.min(attempts * 50, 2000)
+const redisConnectTimeoutMs = Number.parseInt(process.env.REDIS_CONNECT_TIMEOUT ?? '2000', 10)
+const redisCommandTimeoutMs = Number.parseInt(process.env.REDIS_COMMAND_TIMEOUT ?? '1000', 10)
+
+const createInMemoryRedis = (): RedisClient => {
+  const store = new Map<string, { value: string; expiresAt: number | null }>()
+
+  return {
+    status: 'ready',
+    async get(key: string): Promise<string | null> {
+      const entry = store.get(key)
+      if (!entry) return null
+
+      if (entry.expiresAt && entry.expiresAt < Date.now()) {
+        store.delete(key)
+        return null
+      }
+
+      return entry.value
+    },
+    async setex(key: string, ttl: number, value: string): Promise<'OK'> {
+      const expiresAt = ttl > 0 ? Date.now() + ttl * 1000 : null
+      store.set(key, { value, expiresAt })
+      return 'OK'
+    },
+    disconnect(): void {
+      store.clear()
+    },
+    on(): void {
+      // in-memory fallback does not emit events
+    }
+  }
+}
+
 // Initialize services
-const redis = new Redis({
-  host: process.env.REDIS_HOST || 'localhost',
-  port: parseInt(process.env.REDIS_PORT || '6379'),
-  password: process.env.REDIS_PASSWORD,
-  retryStrategy: (times: number) => Math.min(times * 50, 2000)
-})
+const defaultRedisHost = 'redis-13585.c274.us-east-1-3.ec2.redns.redis-cloud.com'
+const defaultRedisPort = 13585
+const defaultRedisPassword = 'A30toc6b3f4yb5ug5avuawckd7j9zf5ghp4z43bie5klxrh6wrq'
+
+const redisConnectionString =
+  process.env.REDIS_URL || process.env.REDIS_CLUSTER || process.env.REDIS_CLUSTER_ENDPOINT
+
+const redisHost = process.env.REDIS_HOST ?? defaultRedisHost
+const redisPort = Number.parseInt(process.env.REDIS_PORT ?? `${defaultRedisPort}`, 10)
+const redisPassword =
+  process.env.REDIS_PASSWORD ?? process.env.REDIS_API_KEY ?? defaultRedisPassword
+
+const redisTlsOptions = (() => {
+  if (process.env.REDIS_TLS === 'true') {
+    return {
+      tls: {
+        rejectUnauthorized: process.env.REDIS_TLS_REJECT_UNAUTHORIZED !== 'false'
+      }
+    }
+  }
+
+  if (process.env.REDIS_TLS === 'false') {
+    return undefined
+  }
+
+  if (redisConnectionString?.trim().startsWith('rediss://')) {
+    return {
+      tls: {
+        rejectUnauthorized: process.env.REDIS_TLS_REJECT_UNAUTHORIZED !== 'false'
+      }
+    }
+  }
+
+  if ((process.env.REDIS_HOST ?? defaultRedisHost) === defaultRedisHost) {
+    return {
+      tls: {
+        rejectUnauthorized: process.env.REDIS_TLS_REJECT_UNAUTHORIZED !== 'false'
+      }
+    }
+  }
+
+  return undefined
+})()
+
+const redisBaseOptions: Record<string, unknown> = {
+  retryStrategy: redisRetryStrategy,
+  enableOfflineQueue: false,
+  maxRetriesPerRequest: 1,
+  connectTimeout: redisConnectTimeoutMs,
+  commandTimeout: redisCommandTimeoutMs,
+  ...(redisTlsOptions ?? {})
+}
+
+const createRedisClient = (): { client: RedisClient; inMemory: boolean } => {
+  if (process.env.REDIS_DISABLED === 'true') {
+    logger.warn('REDIS_DISABLED=true; using in-memory cache only')
+    return { client: createInMemoryRedis(), inMemory: true }
+  }
+
+  try {
+    if (redisConnectionString) {
+      return {
+        client: new Redis(redisConnectionString, redisBaseOptions),
+        inMemory: false
+      }
+    }
+
+    return {
+      client: new Redis({
+        ...redisBaseOptions,
+        host: redisHost,
+        port: redisPort,
+        password: redisPassword
+      }),
+      inMemory: false
+    }
+  } catch (error) {
+    logger.error({ err: error }, 'Failed to initialize Redis client; using in-memory cache')
+    return { client: createInMemoryRedis(), inMemory: true }
+  }
+}
+
+const { client: redis, inMemory: redisInMemory } = createRedisClient()
+
+if (!redisInMemory) {
+  redis.on('error', (error: Error) => {
+    logger.error({ err: error }, 'Redis connection error')
+  })
+
+  redis.on('ready', () => {
+    logger.info('Connected to Redis cache')
+  })
+} else {
+  logger.warn('Redis unavailable; caching will run in in-memory fallback mode')
+}
 
 const serviceRegistry = new ServiceRegistry(logger)
 const mlModelService = new MLModelService(logger, serviceRegistry)

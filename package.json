@@ -3,13 +3,25 @@
   "private": true,
   "version": "0.1.0",
   "scripts": {
-    "dev": "pnpm -r --parallel --stream --filter ./apps/frontend --filter ./apps/intent-router run dev",
+    "build": "pnpm -r --if-present build",
+    "build:frontend": "pnpm --dir apps/frontend build",
+    "build:router": "pnpm --dir apps/intent-router build",
+    "build:all": "pnpm -r --parallel --if-present build",
     "dev:frontend": "pnpm --dir apps/frontend dev",
-    "dev:router": "pnpm --dir apps/intent-router dev",
-    "dev:manifest": "pnpm --dir apps/manifest-generator dev",
+    "dev:frontend:only": "echo '🚀 Starting frontend only (connects to GCP Cloud Run API)' && pnpm --dir apps/frontend dev",
+    "dev:router:local": "echo '⚠️  DEPRECATED: Backend runs on GCP Cloud Run. Use dev:frontend instead' && exit 1",
+    "dev": "pnpm dev:frontend:only",
     "lint": "pnpm -r --if-present lint",
     "test:unit": "pnpm -r --if-present test:unit",
     "type-check": "pnpm -r --if-present type-check",
-    "contract": "node ./tools/contracts/run-contract.mjs"
+    "contract": "node ./tools/contracts/run-contract.mjs",
+    "deploy:frontend": "echo '📦 Deploy frontend to Vercel: git push origin main'",
+    "deploy:backend": "echo '📦 Deploy backend: See deploy/cloud-run/DEPLOYMENT_GUIDE.md'",
+    "info": "echo '📌 Frontend: localhost:3000 → Backend: GCP Cloud Run → Cache: Redis Cloud'",
+    "start": "pnpm dev:frontend:only",
+    "test": "node --test apps/frontend/tests/e2e/cloud-run.test.mjs",
+    "test:intent": "node --test apps/frontend/tests/e2e/intent-recognition.test.mjs",
+    "test:curl": "bash tests/curl-intent-test.sh",
+    "test:quick": "bash tests/quick-test.sh"
   }
 }

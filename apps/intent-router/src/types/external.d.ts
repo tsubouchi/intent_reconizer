@@ -20,11 +20,6 @@ declare module 'socket.io' {
   export const Server: any
 }
 
-declare module 'ioredis' {
-  const Redis: any
-  export default Redis
-}
-
 declare module 'pino' {
   export type Logger = any
   const pino: (...args: any[]) => Logger
@@ -39,4 +34,18 @@ declare module 'pino-pretty' {
 declare module 'opossum' {
   const CircuitBreaker: any
   export default CircuitBreaker
+}
+declare module '@google-cloud/firestore' {
+  export default class Firestore {
+    constructor(options?: Record<string, any>)
+    collection(path: string): any
+  }
+}
+
+declare module '@google-cloud/secret-manager' {
+  export class SecretManagerServiceClient {
+    constructor(options?: Record<string, any>)
+    accessSecretVersion(request: Record<string, any>): Promise<any>
+  }
+  export default SecretManagerServiceClient
 }

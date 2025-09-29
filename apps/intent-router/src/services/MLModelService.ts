@@ -17,9 +17,9 @@ interface LLMServiceResponse {
 export class MLModelService {
   private isInitialized = false
   private activeModelId: string = HEURISTIC_MODEL_ID
-  private readonly openAIApiKey = process.env.OPENAI_API_KEY
-  private readonly openAIModel = process.env.OPENAI_MODEL || 'gpt-4o-mini'
-  private readonly llmProvider = process.env.LLM_PROVIDER || 'openai'
+  private readonly geminiApiKey = process.env.GEMINI_API_KEY
+  private readonly geminiModel = process.env.GEMINI_MODEL || 'models/gemini-2.5-flash'
+  private readonly llmProvider = process.env.LLM_PROVIDER || 'gemini'
 
   constructor(private logger: any, private serviceRegistry: ServiceRegistry) {}
 
@@ -29,7 +29,7 @@ export class MLModelService {
     }
 
     if (this.canUseLLM()) {
-      this.logger.info({ provider: this.llmProvider, model: this.openAIModel }, 'LLM intent model enabled')
+      this.logger.info({ provider: this.llmProvider, model: this.geminiModel }, 'LLM intent model enabled')
     } else {
       this.logger.info('LLM intent model disabled; using heuristic classifier')
     }
@@ -51,7 +51,7 @@ export class MLModelService {
     if (this.canUseLLM()) {
       const llmScores = await this.classifyWithLLM(trimmed)
       if (llmScores && Object.keys(llmScores).length) {
-        this.activeModelId = `${this.llmProvider}:${this.openAIModel}`
+        this.activeModelId = `${this.llmProvider}:${this.geminiModel}`
         return llmScores
       }
       this.logger.warn('LLM classification failed; falling back to heuristic intent model')
@@ -108,39 +108,39 @@ export class MLModelService {
 
     try {
       const services = Object.keys(this.serviceRegistry.list())
-      const prompt = this.buildPrompt(text, services)
+      const prompt = this.buildGeminiPrompt(text, services)
 
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      this.logger.info({ model: this.geminiModel }, 'Calling Gemini API for intent classification')
+
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${this.geminiModel}:generateContent?key=${this.geminiApiKey}`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${this.openAIApiKey}`
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          model: this.openAIModel,
-          response_format: { type: 'json_object' },
-          messages: [
-            {
-              role: 'system',
-              content:
-                'You are an intent routing classifier. Given a user request, return JSON with scores between 0 and 1 for each known service.'
-            },
-            {
-              role: 'user',
-              content: prompt
-            }
-          ]
+          contents: [{
+            parts: [{
+              text: prompt
+            }]
+          }],
+          generationConfig: {
+            temperature: 0.2,
+            topK: 1,
+            topP: 1,
+            maxOutputTokens: 1024
+          }
         })
       })
 
       if (!response.ok) {
         const errorBody = await response.text()
-        this.logger.error({ status: response.status, errorBody }, 'LLM classification HTTP error')
-        return null
+        this.logger.error({ status: response.status, errorBody }, 'Gemini classification HTTP error')
+        // Fallback to heuristics on API error
+        return this.classifyWithHeuristics(text)
       }
 
       const payload = (await response.json()) as any
-      const content: string | undefined = payload?.choices?.[0]?.message?.content
+      const content: string | undefined = payload?.candidates?.[0]?.content?.parts?.[0]?.text
 
       if (!content) {
         this.logger.error({ payload }, 'LLM classification missing content')
@@ -169,28 +169,43 @@ export class MLModelService {
 
       return Object.keys(scores).length ? scores : null
     } catch (error) {
-      this.logger.error({ error }, 'LLM classification failed')
-      return null
+      this.logger.error({ error }, 'Gemini classification failed, using heuristics')
+      // Fallback to heuristics on error
+      return this.classifyWithHeuristics(text)
     }
   }
 
   private canUseLLM(): boolean {
-    return this.llmProvider === 'openai' && Boolean(this.openAIApiKey)
+    return this.llmProvider === 'gemini' && Boolean(this.geminiApiKey)
   }
 
-  private buildPrompt(text: string, services: string[]): string {
+  private buildGeminiPrompt(text: string, services: string[]): string {
+    const serviceList = services.length > 0 ? services : [
+      'user-authentication-service',
+      'payment-processing-service',
+      'email-notification-service',
+      'data-analytics-service',
+      'api-gateway-service'
+    ]
+
     return [
-      'Classify the following request into the available backend services.',
-      'Return JSON with this shape:',
-      '{ "services": [ { "name": "service-name", "score": 0.0, "reason": "short rationale" } ] }',
-      'Rules:',
-      '- Only include services from this list: ' + services.join(', '),
-      '- Score must be between 0 and 1 (higher means more suitable).',
-      '- You may include multiple services when relevant.',
-      '- If you are uncertain, include api-gateway-service with a low score.',
+      'You are an intent routing classifier. Analyze the following user request and classify it into the appropriate backend services.',
       '',
-      'Request:',
-      text
+      'Return a JSON response with this exact structure:',
+      '{ "services": [ { "name": "service-name", "score": 0.0, "reason": "short explanation" } ] }',
+      '',
+      'Available services:',
+      ...serviceList.map(s => `- ${s}`),
+      '',
+      'Rules:',
+      '1. Score must be between 0 and 1 (higher = more suitable)',
+      '2. Include multiple services if the request spans multiple domains',
+      '3. Always provide at least one service',
+      '4. If uncertain, use api-gateway-service with score 0.5',
+      '',
+      'User Request: ' + text,
+      '',
+      'Respond with only the JSON, no additional text.'
     ].join('\n')
   }
 

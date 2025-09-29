@@ -8,7 +8,7 @@ const router = Router();
 const CreateSessionSchema = z.object({
   tenantId: z.string().optional(),
   userId: z.string().optional(),
-  metadata: z.record(z.any()).optional()
+  metadata: z.record(z.string(), z.any()).optional()
 });
 
 router.post('/', async (req: Request, res: Response) => {

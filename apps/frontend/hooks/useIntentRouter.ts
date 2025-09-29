@@ -9,6 +9,7 @@ type IntentRouterState = {
   error: string | null
   lastRoute: IntentResponse | null
   routeIntent: (request: IntentRequest) => Promise<void>
+  reset: () => void
 }
 
 export function useIntentRouter(): IntentRouterState {
@@ -24,11 +25,16 @@ export function useIntentRouter(): IntentRouterState {
       setLastRoute(response)
     } catch (submitError) {
       console.error(submitError)
-      setError('インテント解析に失敗しました。APIエンドポイントを確認してください。')
+      setError('Intent analysis failed. Please verify the router API endpoint.')
       throw submitError
     } finally {
       setIsLoading(false)
     }
+  }, [])
+
+  const reset = useCallback(() => {
+    setLastRoute(null)
+    setError(null)
   }, [])
 
   return {
@@ -36,5 +42,6 @@ export function useIntentRouter(): IntentRouterState {
     error,
     lastRoute,
     routeIntent,
+    reset,
   }
 }

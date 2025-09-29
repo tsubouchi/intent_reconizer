@@ -52,7 +52,7 @@ export function IntentInput({ onSubmit, isLoading }: IntentInputProps) {
     event.preventDefault()
 
     if (!text.trim() && !path.trim()) {
-      setError('テキストまたはパスを入力してください。')
+      setError('Enter intent text or a request path before submitting.')
       return
     }
 
@@ -66,7 +66,7 @@ export function IntentInput({ onSubmit, isLoading }: IntentInputProps) {
       })
     } catch (submitError) {
       console.error(submitError)
-      setError('ルーティングのリクエストに失敗しました。')
+      setError('Failed to submit routing request.')
     }
   }
 
@@ -79,7 +79,7 @@ export function IntentInput({ onSubmit, isLoading }: IntentInputProps) {
       await onSubmit(sample)
     } catch (submitError) {
       console.error(submitError)
-      setError('サンプルリクエストの送信に失敗しました。')
+      setError('Failed to send sample request.')
     }
   }
 
@@ -101,16 +101,16 @@ export function IntentInput({ onSubmit, isLoading }: IntentInputProps) {
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="space-y-2">
           <label htmlFor="intent-text" className="text-xs uppercase tracking-[0.3em] text-[var(--text-soft)]">
-            インテントの説明
+            Intent Description
           </label>
           <textarea
             id="intent-text"
             value={text}
             onChange={(event) => setText(event.target.value)}
-            rows={6}
-            className="matrix-input mt-1 min-h-[180px] w-full rounded-2xl border border-[rgba(34,197,94,0.2)] bg-[rgba(8,10,8,0.84)] p-5 text-base leading-relaxed resize-y"
+            rows={4}
+            className="matrix-input mt-1 min-h-[120px] w-full rounded-2xl border border-[rgba(34,197,94,0.2)] bg-[rgba(8,10,8,0.84)] p-4 text-sm leading-relaxed resize-y"
             style={{ width: '100%', maxWidth: '100%' }}
-            placeholder="例: ユーザーがプレミアムプランの支払いを行いたい"
+            placeholder="Example: User wants to complete payment for the premium plan"
           />
         </div>
 
@@ -119,14 +119,14 @@ export function IntentInput({ onSubmit, isLoading }: IntentInputProps) {
           onClick={() => setShowAdvanced((previous) => !previous)}
           className="text-xs font-semibold uppercase tracking-[0.3em] text-[var(--text-muted)] transition hover:text-[var(--text-primary)]"
         >
-          {showAdvanced ? '入力項目を隠す' : '詳細設定を表示'}
+          {showAdvanced ? 'Hide advanced fields' : 'Show advanced fields'}
         </button>
 
         {showAdvanced && (
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
               <label htmlFor="intent-path" className="text-xs uppercase tracking-[0.3em] text-[var(--text-soft)]">
-                リクエストパス
+                Request Path
               </label>
               <input
                 id="intent-path"
@@ -134,13 +134,13 @@ export function IntentInput({ onSubmit, isLoading }: IntentInputProps) {
                 value={path}
                 onChange={(event) => setPath(event.target.value)}
                 className="matrix-input mt-1 w-full rounded-2xl border border-[rgba(34,197,94,0.2)] bg-[rgba(8,10,8,0.84)] p-3 text-sm"
-                placeholder="例: /api/payments/charge"
+                placeholder="Example: /api/payments/charge"
               />
             </div>
 
             <div className="space-y-2">
               <label htmlFor="intent-method" className="text-xs uppercase tracking-[0.3em] text-[var(--text-soft)]">
-                HTTPメソッド
+                HTTP Method
               </label>
               <select
                 id="intent-method"
@@ -158,18 +158,18 @@ export function IntentInput({ onSubmit, isLoading }: IntentInputProps) {
           </div>
         )}
 
-        {error && <p className="text-sm text-red-300">{error}</p>}
-
         <div className="flex items-center justify-between">
           <p className="text-xs uppercase tracking-[0.25em] text-[var(--text-soft)]">Endpoint: /intent/recognize</p>
           <button
             type="submit"
-            className="rounded-full bg-[var(--accent-primary)] px-6 py-2 text-xs font-semibold uppercase tracking-[0.28em] text-black shadow-[0_0_18px_rgba(34,197,94,0.35)] transition hover:brightness-110 hover:shadow-[0_0_22px_rgba(34,197,94,0.5)] disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded-full bg-[var(--accent-primary)] px-6 py-2.5 text-xs font-semibold uppercase tracking-[0.28em] text-black shadow-[0_0_18px_rgba(34,197,94,0.35)] transition hover:brightness-110 hover:shadow-[0_0_22px_rgba(34,197,94,0.5)] disabled:cursor-not-allowed disabled:opacity-60"
             disabled={isLoading}
           >
-            {isLoading ? '解析中…' : 'インテント解析'}
+            {isLoading ? 'Processing...' : 'Send for analysis'}
           </button>
         </div>
+
+        {error && <p className="text-sm text-red-300">{error}</p>}
       </form>
     </div>
   )

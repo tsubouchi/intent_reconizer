@@ -1,6 +1,9 @@
 import axios from 'axios'
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_ROUTER_API_URL || 'https://intent-recognition-router.run.app'
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL ||
+  process.env.NEXT_PUBLIC_ROUTER_API_URL ||
+  'https://agi-egg-isr-router-1028435695123.us-central1.run.app'
 
 export interface IntentRequest {
   text?: string
@@ -198,7 +201,7 @@ class IntentRouterAPI {
 
   async checkLiveness(): Promise<boolean> {
     try {
-      await this.client.get('/health/live')
+      await this.client.get('/health')
       return true
     } catch (error) {
       console.error(error)

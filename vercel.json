@@ -1,17 +1,25 @@
 {
-  "buildCommand": "cd apps/intent-router && pnpm install && pnpm build",
-  "outputDirectory": "apps/intent-router/dist",
+  "buildCommand": "cd apps/frontend && pnpm build",
+  "outputDirectory": "apps/frontend/.next",
   "installCommand": "pnpm install",
-  "framework": null,
-  "functions": {
-    "apps/intent-router/dist/index.js": {
-      "runtime": "@vercel/node@3.2.22"
-    }
+  "framework": "nextjs",
+  "env": {
+    "NEXT_PUBLIC_API_URL": "https://agi-egg-isr-router-1028435695123.us-central1.run.app"
   },
-  "rewrites": [
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "s-maxage=0" }
+      ]
+    },
     {
       "source": "/(.*)",
-      "destination": "/apps/intent-router/dist/index.js"
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "X-Frame-Options", "value": "DENY" },
+        { "key": "X-XSS-Protection", "value": "1; mode=block" }
+      ]
     }
   ]
 }
